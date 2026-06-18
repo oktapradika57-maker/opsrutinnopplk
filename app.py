@@ -2,9 +2,9 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 
-# Konfigurasi Halaman
+# Konfigurasi Halaman Minimalis & Wide
 st.set_page_config(
-    page_title="Financial & Fuel Analytics Dashboard",
+    page_title="Financial Operations Dashboard",
     page_icon="💳",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -14,7 +14,7 @@ st.set_page_config(
 SPREADSHEET_ID = "1-f6fF6f3AGGXa89ldah0Hqwd3n2-AuzDNIgIRng2Gyw"
 csv_url = f"https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet=Detail%20OPS"
 
-@st.cache_data(ttl=2) # Sinkronisasi data real-time super cepat
+@st.cache_data(ttl=2) # Sinkronisasi data real-time kilat (2 detik) jika Google Sheets diubah
 def load_financial_data(url):
     try:
         df = pd.read_csv(f"{url}&timestamp={pd.Timestamp.now().timestamp()}")
@@ -26,87 +26,66 @@ def load_financial_data(url):
 df_raw = load_financial_data(csv_url)
 
 if df_raw is not None and not df_raw.empty:
-    # Buat salinan data dan bersihkan kolom kosong kosong
+    # Buat salinan data dan bersihkan kolom yang kosong
     df = df_raw.dropna(how='all', axis=1).copy()
     
     # =========================================================================
-    # ⚠️ BERSIHKAN & SESUAIKAN NAMA KOLOM DI BAWAH INI JIKA TERJADI KOTAK MERAH
+    # ⚠️ KUNCI NAMA KOLOM MANUAL SESUAI DI GOOGLE SHEETS ANDA (BESAR/KECIL HURUF)
     # =========================================================================
-    NOMINAL_KOLOM_ASLI = "Total Biaya (Sesuai Nota)"  # Kolom Nominal Biaya
-    BBM_KOLOM_ASLI     = "Liter BBM"                # Kolom Pengisian BBM (Liter)
-    KM_KOLOM_ASLI      = "KM"                       # Kolom Jarak Tempuh (KM)
-    PIC_KOLOM_ASLI     = "PIC"                      # Kolom Nama Requestor
-    TIM_KOLOM_ASLI     = "Tim"                      # Kolom Tim / Divisi
-    TAHAP_KOLOM_ASLI   = "Tahap"                    # Kolom Tahap / Status Pengajuan
-    TANGGAL_KOLOM_ASLI = "Tanggal"                  # Kolom Tanggal Kegiatan
+    NOMINAL_KOLOM_ASLI = "Total Biaya Sesuai Nota"  # <-- Pastikan nama kolom ini sama persis di Sheet Anda
+    PIC_KOLOM_ASLI     = "PIC"                      
+    TIM_KOLOM_ASLI     = "Tim"                      
+    TAHAP_KOLOM_ASLI   = "Tahap"                    
+    TANGGAL_KOLOM_ASLI = "Tanggal"                  
     # =========================================================================
 
-    # Pengecekan Keberadaan Kolom Kritis
+    # Validasi awal keberadaan kolom nominal
     if NOMINAL_KOLOM_ASLI not in df.columns:
-        st.error(f"❌ Kolom bernama '{NOMINAL_KOLOM_ASLI}' tidak ditemukan. Kolom di Google Sheets Anda: {list(df.columns)}")
+        st.error(f"❌ Kolom bernama '{NOMINAL_KOLOM_ASLI}' tidak ditemukan. Daftar kolom di Google Sheets Anda saat ini adalah: {list(df.columns)}")
         st.stop()
 
-    # --- PRE-PROCESSING & PEMBERSIHAN DATA AGRESIF ---
+    # --- PRE-PROCESSING & PEMBERSIHAN DATA ---
     
-    # 1. Penanganan Tanggal & Ekstrak Bulan (Aman dari AttributeError .dt)
+    # 1. Standarisasi Tanggal & Bulan (Mencegah Error .dt Accessor)
     if TANGGAL_KOLOM_ASLI in df.columns:
-        # Konversi paksa kolom ke datetime dengan penanganan error 'coerce'
         df[TANGGAL_KOLOM_ASLI] = pd.to_datetime(df[TANGGAL_KOLOM_ASLI], errors='coerce')
-        
-        # Isi tanggal kosong (NaT) dengan tanggal hari ini agar .dt accessor tidak crash
-        df[TANGGAL_KOLOM_ASLI] = df[TANGGAL_KOLOM_ASLI].fillna(pd.Timestamp.now())
-        
+        df[TANGGAL_KOLOM_ASLI] = df[TANGGAL_KOLOM_ASLI].fillna(pd.Timestamp.now()) # Fallback data kosong
         df['Bulan'] = df[TANGGAL_KOLOM_ASLI].dt.strftime('%B')
         df['Tahun-Bulan'] = df[TANGGAL_KOLOM_ASLI].dt.strftime('%Y-%m')
     else:
         df['Bulan'] = "Tidak Ada Data Tanggal"
         df['Tahun-Bulan'] = "Tidak Ada Data Tanggal"
 
-    # 2. Pembersihan Super Ketat Angka Keuangan (Nominal Uang)
+    # 2. Pembersihan Ekstrem Angka Uang/Nominal Finansial
     df['Teks_Asli_Nota'] = df[NOMINAL_KOLOM_ASLI].astype(str).str.strip()
     
-    # Hilangkan lambang currency, spasi kosong, dan titik ribuan Indonesia
     df[NOMINAL_KOLOM_ASLI] = df[NOMINAL_KOLOM_ASLI].astype(str).str.replace('Rp', '', regex=False)
-    df[NOMINAL_KOLOM_ASLI] = df[NOMINAL_KOLOM_ASLI].str.replace('.', '', regex=False)
-    df[NOMINAL_KOLOM_ASLI] = df[NOMINAL_KOLOM_ASLI].str.replace(',', '.', regex=False)
-    # Singkirkan karakter string sisa apapun selain angka, minus, dan titik desimal
-    df[NOMINAL_KOLOM_ASLI] = df[NOMINAL_KOLOM_ASLI].str.replace(r'[^\d.-]', '', regex=True)
+    df[NOMINAL_KOLOM_ASLI] = df[NOMINAL_KOLOM_ASLI].str.replace('.', '', regex=False) # Hapus titik ribuan Indo
+    df[NOMINAL_KOLOM_ASLI] = df[NOMINAL_KOLOM_ASLI].str.replace(',', '.', regex=False) # Normalisasi koma desimal
+    df[NOMINAL_KOLOM_ASLI] = df[NOMINAL_KOLOM_ASLI].str.replace(r'[^\d.-]', '', regex=True) # Hapus teks sisa aneh
     df[NOMINAL_KOLOM_ASLI] = pd.to_numeric(df[NOMINAL_KOLOM_ASLI], errors='coerce').fillna(0)
 
-    # 3. Pembersihan BBM & KM Jarak Tempuh
-    for target_col in [BBM_KOLOM_ASLI, KM_KOLOM_ASLI]:
-        if target_col in df.columns:
-            df[target_col] = df[target_col].astype(str).str.replace(r'[^\d.-]', '', regex=True)
-            df[target_col] = pd.to_numeric(df[target_col], errors='coerce').fillna(0)
-        else:
-            df[target_col] = 0.0
-
-    # Perhitungan Rasio BBM/KM Realistis
-    df['BBM per KM (L/KM)'] = np.where(df[KM_KOLOM_ASLI] > 0, (df[BBM_KOLOM_ASLI] / df[KM_KOLOM_ASLI]), 0).round(3)
-
-    # 4. Fitur Analisa Kewajaran Operasional Otomatis
+    # 3. Kolom Analisa Kewajaran Operasional Otomatis Berbasis Median (Uang)
     median_ops = df[NOMINAL_KOLOM_ASLI].median() if df[NOMINAL_KOLOM_ASLI].median() > 0 else 500000
     def cek_kewajaran(row):
         nominal = row[NOMINAL_KOLOM_ASLI]
-        rasio_bbm = row['BBM per KM (L/KM)']
-        
         if nominal == 0:
             return "⚠️ Format Data Salah / Nol"
-        elif nominal > (median_ops * 3) or rasio_bbm > 0.35: # Batas anomali konsumsi bbm berat (misal > 0.35 L/KM)
-            return "🚨 Tinggi (Perlu Review Ulang)"
+        elif nominal > (median_ops * 3):
+            return "🚨 Tinggi (Perlu Review Tambahan)"
         elif nominal > (median_ops * 1.5):
             return "🟡 Wajar (Di Atas Rata-rata)"
         else:
-            return "🟢 Sangat Wajar"
+            return "🟢 Sangat Wajar / Sesuai Budget"
 
     df['Analisa Kewajaran'] = df.apply(cek_kewajaran, axis=1)
 
-    # Amankan kolom filter string dari tipe data NaN/Float campuran
+    # Menghindari error tipe data NaN campuran pada filter dropdown string
     for c in [PIC_KOLOM_ASLI, TAHAP_KOLOM_ASLI, TIM_KOLOM_ASLI]:
         if c in df.columns: 
             df[c] = df[c].astype(str).str.strip().replace('nan', '').fillna('')
 
-    # --- SIDEBAR FILTER ---
+    # --- SIDEBAR PANEL FILTER ---
     st.sidebar.header("⚙️ Panel Filter Analisa")
     search_pic = st.sidebar.text_input("👤 Cari PIC / Requestor", placeholder="Ketik nama...")
     
@@ -125,11 +104,11 @@ if df_raw is not None and not df_raw.empty:
     unique_bulan = ["Semua Bulan"] + sorted([x for x in df['Bulan'].dropna().unique() if x])
     selected_bulan = st.sidebar.selectbox("📅 Pilih Bulan", unique_bulan)
 
-    if st.sidebar.button("🔄 Reset & Refresh Data", use_container_width=True):
+    if st.sidebar.button("🔄 Reset & Refresh Data Manual", use_container_width=True):
         st.cache_data.clear()
         st.rerun()
 
-    # --- PROSES FILTERING DATA DASHBOARD ---
+    # --- EKSEKUSI PENYARINGAN DATA (MULTI-FILTER) ---
     df_filtered = df.copy()
     if search_pic and PIC_KOLOM_ASLI in df_filtered.columns:
         df_filtered = df_filtered[df_filtered[PIC_KOLOM_ASLI].str.contains(search_pic, case=False, na=False)]
@@ -140,72 +119,64 @@ if df_raw is not None and not df_raw.empty:
     if selected_bulan != "Semua Bulan":
         df_filtered = df_filtered[df_filtered['Bulan'] == selected_bulan]
 
-    # --- TAMPILAN UTAMA ---
-    st.title("💳 Financial & Fuel Analytics Dashboard")
-    st.caption("Monitoring Real-Time Pengeluaran Keuangan & Audit Konsumsi BBM Operasional")
+    # --- ELEMEN TAMPILAN DASHBOARD ---
+    st.title("💳 Financial Operations Dashboard")
+    st.caption("Monitoring Real-Time Alokasi Pengeluaran Finansial & Audit Kewajaran Budget Operasional")
     st.markdown("---")
 
-    # --- METRICS CARD ---
+    # --- CARD KPI UTAMA (METRIKS) ---
     total_transaksi = len(df_filtered)
     total_pengeluaran = df_filtered[NOMINAL_KOLOM_ASLI].sum()
-    avg_bbm = df_filtered['BBM per KM (L/KM)'].mean() if total_transaksi > 0 else 0
+    rata_rata_biaya = df_filtered[NOMINAL_KOLOM_ASLI].mean() if total_transaksi > 0 else 0
 
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.metric(label="Total Biaya Operasional (Terfilter)", value=f"Rp {total_pengeluaran:,.0f}".replace(",", "."))
+        st.metric(label="Total Pengeluaran (Terfilter)", value=f"Rp {total_pengeluaran:,.0f}".replace(",", "."))
     with col2:
-        st.metric(label="Rata-rata Konsumsi BBM", value=f"{avg_bbm:.3f} L / KM")
+        st.metric(label="Rata-rata Biaya", value=f"Rp {rata_rata_biaya:,.0f}".replace(",", "."))
     with col3:
-        st.metric(label="Jumlah Log Terhitung", value=f"{total_transaksi} Item")
+        st.metric(label="Jumlah Transaksi Log", value=f"{total_transaksi} Item")
 
     st.markdown("---")
 
-    # --- GRAFIK UTAMA KOMPARASI BBM DAN BIAYA OPS ---
-    st.subheader("📊 Grafik Komparasi Kewajaran Operasional vs Konsumsi BBM")
-    if not df_filtered.empty and total_pengeluaran > 0:
-        chart_idx = df_filtered[PIC_KOLOM_ASLI].values if PIC_KOLOM_ASLI in df_filtered.columns else range(1, len(df_filtered)+1)
-        
-        # Buat dataframe penyeimbang visual skala (L/KM dikalikan secara proporsional agar grafik seimbang)
-        compare_df = pd.DataFrame({
-            'Total Biaya Ops': df_filtered[NOMINAL_KOLOM_ASLI].values,
-            'Konsumsi BBM L/KM (Skala x100k)': df_filtered['BBM per KM (L/KM)'].values * 100000 
-        }, index=chart_idx)
-        st.bar_chart(compare_df, color=["#3b82f6", "#ef4444"])
-        st.caption("💡 *Interpretasi: Batang Biru = Total Biaya, Batang Merah = Rasio Penggunaan BBM per KM. Jika Batang Merah melonjak tinggi sendirian tanpa diimbangi Jarak KM, terindikasi adanya pemborosan BBM.*")
-    else:
-        st.warning("💡 Grafik Utama tidak muncul karena data nominal terbaca Rp 0 atau filter kosong.")
+    # --- GRAFIK ANALISA NOMINAL FINANSIAL ---
+    col_chart1, col_chart2 = st.columns(2)
 
-    st.markdown("---")
-
-    # --- GRAFIK PENDUKUNG ---
-    col_sub1, col_sub2 = st.columns(2)
-    with col_sub1:
-        st.subheader("📅 Tren Alokasi Dana per Bulan")
+    with col_chart1:
+        st.subheader("📅 Tren Total Pengeluaran Berdasarkan Bulan")
         if not df_filtered.empty and total_pengeluaran > 0:
-            st.line_chart(df_filtered.groupby('Tahun-Bulan')[NOMINAL_KOLOM_ASLI].sum(), color="#10b981")
-    with col_sub2:
-        st.subheader("👥 Distribusi Anggaran per Tim")
+            trend_data = df_filtered.groupby('Tahun-Bulan')[NOMINAL_KOLOM_ASLI].sum()
+            st.line_chart(trend_data, color="#10b981") 
+        else:
+            st.info("💡 Grafik tren kosong karena nominal Rp 0 atau filter tidak cocok.")
+
+    with col_chart2:
+        st.subheader("👥 Alokasi Pengeluaran per Tim / Divisi")
         if not df_filtered.empty and TIM_KOLOM_ASLI in df_filtered.columns and total_pengeluaran > 0:
-            st.bar_chart(df_filtered.groupby(TIM_KOLOM_ASLI)[NOMINAL_KOLOM_ASLI].sum(), color="#f59e0b")
+            tim_data = df_filtered.groupby(TIM_KOLOM_ASLI)[NOMINAL_KOLOM_ASLI].sum().sort_values(ascending=False)
+            st.bar_chart(tim_data, color="#3b82f6") 
+        else:
+            st.info("💡 Grafik divisi kosong karena nama kolom Tim belum sesuai.")
 
     st.markdown("---")
 
-    # --- TABEL LOG DETAIL OPERASIONAL ---
+    # --- TABEL RINCIAN LOG & AUDIT KEWAJARAN ---
     st.subheader("📋 Rincian Data Log & Analisa Kewajaran")
     if not df_filtered.empty:
         df_display = df_filtered.copy()
         
-        # Tata Letak Urutan Kolom
-        base_cols = ['Analisa Kewajaran', 'BBM per KM (L/KM)', NOMINAL_KOLOM_ASLI, 'Teks_Asli_Nota']
-        cols_to_show = base_cols + [c for c in df_display.columns if c not in base_cols and c not in ['Bulan', 'Tahun-Bulan']]
-        df_display = df_display[cols_to_show]
+        # Pengaturan Tata Urutan Kolom Utama Tabel
+        base_cols = ['Analisa Kewajaran', NOMINAL_KOLOM_ASLI, 'Teks_Asli_Nota']
+        remaining_cols = [c for c in df_display.columns if c not in base_cols and c not in ['Bulan', 'Tahun-Bulan']]
+        df_display = df_display[base_cols + remaining_cols]
         
-        # Formatting Visual Output tabel agar rapi
+        # Format angka desimal tampilan tabel menjadi Rupiah Cantik (.map)
         df_display[NOMINAL_KOLOM_ASLI] = df_display[NOMINAL_KOLOM_ASLI].map("Rp {:,.0f}".format)
         if TANGGAL_KOLOM_ASLI in df_display.columns:
             df_display[TANGGAL_KOLOM_ASLI] = df_display[TANGGAL_KOLOM_ASLI].dt.strftime('%Y-%m-%d')
-        df_display['BBM per KM (L/KM)'] = df_display['BBM per KM (L/KM)'].map("{:.3f} L/KM".format)
 
         st.dataframe(df_display, use_container_width=True, hide_index=True)
+    else:
+        st.warning("⚠️ Data log tidak ditemukan untuk kombinasi penyaringan filter ini.")
 else:
-    st.info("Mencoba mengunduh file spreadsheet...")
+    st.info("Menyambungkan koneksi log ke Google Sheets...")
