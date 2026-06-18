@@ -32,7 +32,7 @@ if df_raw is not None and not df_raw.empty:
     # =========================================================================
     # ⚠️ KUNCI NAMA KOLOM MANUAL SESUAI DI GOOGLE SHEETS ANDA (BESAR/KECIL HURUF)
     # =========================================================================
-    NOMINAL_KOLOM_ASLI = "Total Biaya Sesuai Nota"  # <-- Pastikan nama kolom ini sama persis di Sheet Anda
+    NOMINAL_KOLOM_ASLI = "Total Biaya (Sesuai Nota)"  # <-- Pastikan nama kolom ini sama persis di Sheet Anda
     PIC_KOLOM_ASLI     = "PIC"                      
     TIM_KOLOM_ASLI     = "Tim"                      
     TAHAP_KOLOM_ASLI   = "Tahap"                    
