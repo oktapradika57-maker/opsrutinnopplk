@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import urllib.request
 
 # 1. KONFIGURASI HALAMAN
 st.set_page_config(
@@ -13,20 +12,19 @@ st.set_page_config(
 
 # ID Spreadsheet & Target Sheet: Detail OPS
 SPREADSHEET_ID = "1-f6fF6f3AGGXa89ldah0Hqwd3n2-AuzDNIgIRng2Gyw"
-csv_url = f"https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet=Detail%20OPS"
+# Menggunakan format ekspor CSV resmi Google yang jauh lebih stabil dan anti-Error 400
+csv_url = f"https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/export?format=csv&sheet=Detail%20OPS"
 
 st.title("💳 Financial Operations Dashboard")
-st.caption("Monitoring Real-Time Alokasi Pengeluaran Finansial & Audit Kewajaran Budget Operasional")
+st.caption("Analisa Real-Time Pengeluaran & Anggaran Operasional Finansial (Sheet: Detail OPS)")
 st.markdown("---")
 
-# 2. FUNGSI PEMUAT DATA AMAN (MENGGUNAKAN URLLIB UNTUK TIMEOUT NYATA)
+# 2. FUNGSI PEMUAT DATA AMAN
 @st.cache_data(ttl=5)
 def load_financial_data(url):
     try:
-        # Menghindari crash pandas dengan mengatur timeout menggunakan urllib bawaan python
-        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-        with urllib.request.urlopen(req, timeout=10) as response:
-            df = pd.read_csv(response)
+        # Membaca CSV langsung menggunakan pandas dengan engine default yang stabil
+        df = pd.read_csv(url)
         return df
     except Exception as e:
         return str(e)
@@ -72,7 +70,7 @@ else:
     if KOLOM_TEXT_NOTA_ASLI not in df.columns:
         st.error(f"❌ Kolom bernama '{KOLOM_TEXT_NOTA_ASLI}' tidak ditemukan.")
         st.info(f"Kolom yang terdeteksi saat ini adalah: {list(df.columns)}")
-        st.markdown("💡 *Silakan sesuaikan tulisan di baris kode nomor 62 dengan nama kolom yang benar.*")
+        st.markdown("💡 *Silakan sesuaikan tulisan di baris kode KOLOM_TEXT_NOTA_ASLI dengan nama kolom yang benar.*")
         st.stop()
 
     # --- PROSES PEMBERSIHAN DATA ---
@@ -86,7 +84,7 @@ else:
     df[KOLOM_TEXT_NOTA_ASLI] = df[KOLOM_TEXT_NOTA_ASLI].str.replace(r'[^\d.-]', '', regex=True)
     df[KOLOM_TEXT_NOTA_ASLI] = pd.to_numeric(df[KOLOM_TEXT_NOTA_ASLI], errors='coerce').fillna(0)
 
-    # Penanganan format tanggal
+    # Penanganan format tanggal secara aman (Mencegah AttributeError .dt)
     if TANGGAL_KOLOM_ASLI in df.columns:
         df[TANGGAL_KOLOM_ASLI] = pd.to_datetime(df[TANGGAL_KOLOM_ASLI], errors='coerce')
         df[TANGGAL_KOLOM_ASLI] = df[TANGGAL_KOLOM_ASLI].fillna(pd.Timestamp.now())
@@ -111,10 +109,10 @@ else:
 
     df['Analisa Kewajaran'] = df.apply(cek_kewajaran, axis=1)
 
-    # Hilangkan nan tipe campuran pada filter sidebar
+    # Penanganan konversi string filter secara aman agar tidak crash .fillna
     for c in [PIC_KOLOM_ASLI, TAHAP_KOLOM_ASLI, TIM_KOLOM_ASLI]:
         if c in df.columns:
-            df[c] = df[c].astype(str).str.strip().replace('nan', '').fillna('')
+            df[c] = df[c].fillna('').astype(str).str.strip().replace('nan', '')
 
     # --- SIDEBAR PANEL FILTER ---
     st.sidebar.header("⚙️ Panel Filter Analisa")
@@ -152,7 +150,7 @@ else:
 
     # --- CARD KPI METRIKS DI UTAMA (TOTAL DI AWAL) ---
     total_transaksi = len(df_filtered)
-    total_pengeluaran = df_filtered[KOLOM_TEXT_NOTA_ASLI].sum()
+    total_pengeluaran = df_filtered[KOLOM_TEXT_NOTA_ASLI].sum() # Variabel diperbaiki dari typo 'total_pengraw'
     rata_rata_biaya = df_filtered[KOLOM_TEXT_NOTA_ASLI].mean() if total_transaksi > 0 else 0
 
     col1, col2, col3 = st.columns(3)
@@ -172,4 +170,33 @@ else:
         st.subheader("📅 Tren Total Pengeluaran Berdasarkan Bulan")
         if not df_filtered.empty and total_pengeluaran > 0:
             trend_data = df_filtered.groupby('Tahun-Bulan')[KOLOM_TEXT_NOTA_ASLI].sum()
-            st.line_chart(trend_data, color="#10b981
+            st.line_chart(trend_data, color="#10b981") # Tanda kutip string literal ditutup dengan benar
+        else:
+            st.info("💡 Grafik tren kosong karena nominal Rp 0 atau filter tidak cocok.")
+
+    with col_chart2:
+        st.subheader("👥 Alokasi Pengeluaran per Tim / Divisi")
+        if not df_filtered.empty and TIM_KOLOM_ASLI in df_filtered.columns and total_pengeluaran > 0:
+            tim_data = df_filtered.groupby(TIM_KOLOM_ASLI)[KOLOM_TEXT_NOTA_ASLI].sum().sort_values(ascending=False)
+            st.bar_chart(tim_data, color="#3b82f6")
+        else:
+            st.info("💡 Grafik alokasi tim kosong karena nominal Rp 0 atau filter tidak cocok.")
+
+    st.markdown("---")
+
+    # --- TABEL DETAIL LOG DATA ---
+    st.subheader("📋 Rincian Data Log & Analisa Kewajaran")
+    if not df_filtered.empty:
+        df_display = df_filtered.copy()
+        
+        base_cols = ['Analisa Kewajaran', KOLOM_TEXT_NOTA_ASLI, 'Teks_Mentah_Nota']
+        remaining_cols = [c for c in df_display.columns if c not in base_cols and c not in ['Bulan', 'Tahun-Bulan']]
+        df_display = df_display[base_cols + remaining_cols]
+        
+        df_display[KOLOM_TEXT_NOTA_ASLI] = df_display[KOLOM_TEXT_NOTA_ASLI].map("Rp {:,.0f}".format)
+        if TANGGAL_KOLOM_ASLI in df_display.columns:
+            df_display[TANGGAL_KOLOM_ASLI] = df_display[TANGGAL_KOLOM_ASLI].dt.strftime('%Y-%m-%d')
+
+        st.dataframe(df_display, use_container_width=True, hide_index=True)
+    else:
+        st.warning("⚠️ Tidak ada data log yang cocok dengan filter saat ini.")
