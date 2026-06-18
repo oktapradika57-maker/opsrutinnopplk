@@ -12,13 +12,14 @@ st.set_page_config(
 
 # ID Spreadsheet & Target Sheet: Detail OPS
 SPREADSHEET_ID = "1-f6fF6f3AGGXa89ldah0Hqwd3n2-AuzDNIgIRng2Gyw"
-# Menggunakan Viz API dengan target sheet name di-encode URL space -> %20
 csv_url = f"https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet=Detail%20OPS"
 
-@st.cache_data(ttl=30)
+# Memuat Data Otomatis (Menggunakan TTL 5 detik agar data selalu auto-update dari Google Sheets)
+@st.cache_data(ttl=5)
 def load_financial_data(url):
     try:
-        df = pd.read_csv(url)
+        # Menambahkan parameter acak kecil agar Google tidak menyajikan cache lama browser
+        df = pd.read_csv(f"{url}&timestamp={pd.Timestamp.now().timestamp()}")
         return df
     except Exception as e:
         st.error(f"Gagal memuat data dari sheet Detail OPS. Pastikan link sudah 'Anyone with link can view'. Error: {e}")
@@ -31,20 +32,16 @@ if df_raw is not None and not df_raw.empty:
     df = df_raw.dropna(how='all', axis=1).copy()
     cols = df.columns
     
-    # --- MAPPING KOLOM SECARA DINAMIS (Anti-Error Huruf Besar/Kecil) ---
+    # --- MAPPING KOLOM SECARA DINAMIS ---
     pic_col = next((c for c in cols if 'pic' in c.lower() or 'request' in c.lower()), None)
     tahap_col = next((c for c in cols if 'tahap' in c.lower() or 'status' in c.lower()), None)
     tanggal_col = next((c for c in cols if 'tanggal' in c.lower() or 'date' in c.lower()), None)
-    
-    # Cari kolom nominal uang/biaya/amount
     nominal_col = next((c for c in cols if any(k in c.lower() for k in ['nominal', 'jumlah', 'biaya', 'amount', 'total', 'debit', 'kredit'])), None)
-    kategori_col = next((c for c in cols if 'kategori' in c.lower() or 'keperluan' in c.lower() or 'keterangan' in c.lower()), cols[0])
 
     # --- PRE-PROCESSING DATA ---
     # 1. Standarisasi Tanggal & Ekstrak Bulan
     if tanggal_col:
         df[tanggal_col] = pd.to_datetime(df[tanggal_col], errors='coerce', format='mixed')
-        # Buat kolom Bulan baru dalam format teks Bahasa Inggris/Angka untuk sorting
         df['Bulan'] = df[tanggal_col].dt.strftime('%B')
         df['Tahun-Bulan'] = df[tanggal_col].dt.strftime('%Y-%m')
     else:
@@ -53,17 +50,16 @@ if df_raw is not None and not df_raw.empty:
 
     # 2. Standarisasi Nominal Angka Keuangan
     if nominal_col:
-        # Bersihkan karakter mata uang (Rp, koma, titik sembarang) jika berupa teks
         if df[nominal_col].dtype == object:
             df[nominal_col] = df[nominal_col].astype(str).str.replace(r'[^\d.-]', '', regex=True)
         df[nominal_col] = pd.to_numeric(df[nominal_col], errors='coerce').fillna(0)
     else:
-        df['Nominal_Mok'] = 0
-        nominal_col = 'Nominal_Mok'
+        df['Nominal_Clean'] = 0
+        nominal_col = 'Nominal_Clean'
 
-    # Ensure filter columns are safe strings
+    # Pastikan data string filter aman
     for c in [pic_col, tahap_col]:
-        if c: df[c] = df[c].astype(str).fillna('')
+        if c: df[c] = df[c].astype(str).replace('nan', '').fillna('')
 
     # --- SIDEBAR FILTER (MINIMALIS) ---
     st.sidebar.header("⚙️ Filter Analisa")
@@ -73,19 +69,21 @@ if df_raw is not None and not df_raw.empty:
     
     # Filter 2: Dropdown Tahap
     if tahap_col:
-        unique_tahap = ["Semua Tahap"] + sorted(df[tahap_col].unique().tolist())
+        unique_tahap = ["Semua Tahap"] + sorted([x for x in df[tahap_col].unique().tolist() if x])
         selected_tahap = st.sidebar.selectbox("🔄 Pilih Tahap", unique_tahap)
     else:
         selected_tahap = "Semua Tahap"
 
     # Filter 3: Dropdown Bulan
     if tanggal_col and not df['Bulan'].isna().all():
-        unique_bulan = ["Semua Bulan"] + sorted(df['Bulan'].dropna().unique().tolist())
+        unique_bulan = ["Semua Bulan"] + sorted([x for x in df['Bulan'].dropna().unique().tolist() if x])
         selected_bulan = st.sidebar.selectbox("📅 Pilih Bulan", unique_bulan)
     else:
         selected_bulan = "Semua Bulan"
 
-    if st.sidebar.button("🔄 Reset Semua Filter", use_container_width=True):
+    # Tombol Force Refresh Data Manual jika dibutuhkan cepat
+    if st.sidebar.button("🔄 Paksa Refresh Data", type="primary", use_container_width=True):
+        st.cache_data.clear()
         st.rerun()
 
     # --- PROSES FILTERING DATA ---
@@ -100,6 +98,7 @@ if df_raw is not None and not df_raw.empty:
     # --- TAMPILAN UTAMA DASHBOARD ---
     st.title("💳 Financial Operations Dashboard")
     st.caption("Analisa Real-Time Pengeluaran & Anggaran Operasional Finansial (Sheet: Detail OPS)")
+    st.info("🔄 Dashboard ini otomatis memperbarui data secara langsung jika Google Sheets diupdate (Auto-refresh 5s).")
     st.markdown("---")
 
     # --- CARD KPI UTAMA ---
@@ -109,7 +108,8 @@ if df_raw is not None and not df_raw.empty:
 
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.metric(label="Total Dana Operasional Terfilter", value=f"Rp {total_pengraw:,.0f}".replace(",", "."))
+        # FIX: Menggunakan variabel total_pengeluaran yang benar untuk menghindari NameError
+        st.metric(label="Total Dana Operasional Terfilter", value=f"Rp {total_pengeluaran:,.0f}".replace(",", "."))
     with col2:
         st.metric(label="Rata-rata Per Transaksi", value=f"Rp {rata_rata_biaya:,.0f}".replace(",", "."))
     with col3:
@@ -121,21 +121,21 @@ if df_raw is not None and not df_raw.empty:
     col_chart1, col_chart2 = st.columns(2)
 
     with col_chart1:
-        st.subheader("📊 Tren Pengeluaran per Bulan / Waktu")
+        st.subheader("📊 Tren Pengeluaran Akumulatif per Waktu")
         if not df_filtered.empty and tanggal_col:
-            # Grouping dana berdasarkan waktu tahun-bulan
             trend_data = df_filtered.groupby('Tahun-Bulan')[nominal_col].sum()
-            st.line_chart(trend_data, color="#10b981") # Garis Hijau Finansial Emerald
+            st.line_chart(trend_data, color="#10b981") 
         else:
             st.info("Data tidak cukup untuk menampilkan tren waktu.")
 
     with col_chart2:
-        st.subheader("📈 Distribusi Alokasi Per Tahap")
-        if not df_filtered.empty and tahap_col:
-            tahap_data = df_filtered.groupby(tahap_col)[nominal_col].sum()
-            st.bar_chart(tahap_data, color="#3b82f6") # Bar chart Biru Modern
+        st.subheader("📈 Total Pengeluaran Berdasarkan PIC / Requestor")
+        if not df_filtered.empty and pic_col:
+            # Mengelompokkan total nominal biaya berdasarkan masing-masing PIC
+            pic_chart_data = df_filtered.groupby(pic_col)[nominal_col].sum().sort_values(ascending=False).head(10)
+            st.bar_chart(pic_chart_data, color="#3b82f6") 
         else:
-            st.info("Data tidak cukup untuk menampilkan distribusi tahap.")
+            st.info("Data tidak cukup untuk menampilkan grafik pengeluaran PIC.")
 
     st.markdown("---")
 
@@ -143,7 +143,6 @@ if df_raw is not None and not df_raw.empty:
     st.subheader("📋 Rincian Data Log Keuangan Operasional")
     
     if not df_filtered.empty:
-        # Format kolom nominal agar mudah dibaca rupiah di dalam tabel interaktif streamlit
         df_display = df_filtered.copy()
         if nominal_col in df_display.columns:
             df_display[nominal_col] = df_display[nominal_col].map("Rp {:,.0f}".format)
@@ -151,11 +150,9 @@ if df_raw is not None and not df_raw.empty:
         if tanggal_col in df_display.columns:
             df_display[tanggal_col] = df_display[tanggal_col].dt.strftime('%Y-%m-%d').fillna('-')
 
-        # Drop kolom temporary bulan agar tabel asli rapi
         df_display = df_display.drop(columns=['Bulan', 'Tahun-Bulan'], errors='ignore')
-
         st.dataframe(df_display, use_container_width=True, hide_index=True)
     else:
-        st.warning("⚠️ Data keuangan tidak ditemukan untuk kombinasi filter ini. Silakan periksa atau ubah opsi filter pada sidebar Anda.")
+        st.warning("⚠️ Data keuangan tidak ditemukan untuk kombinasi filter ini.")
 else:
     st.info("Memproses atau mendownload data operasional dari tautan spreadsheet Anda...")
