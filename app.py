@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 
-# 1. KONFIGURASI HALAMAN
+# 1. KONFIGURASI HALAMAN MALAHAN UTAMA
 st.set_page_config(
     page_title="Financial Operations Dashboard",
     page_icon="💳",
@@ -12,18 +12,17 @@ st.set_page_config(
 
 # ID Spreadsheet & Target Sheet: Detail OPS
 SPREADSHEET_ID = "1-f6fF6f3AGGXa89ldah0Hqwd3n2-AuzDNIgIRng2Gyw"
-# Menggunakan format ekspor CSV resmi Google yang jauh lebih stabil dan anti-Error 400
-csv_url = f"https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/export?format=csv&sheet=Detail%20OPS"
+# Menggunakan gviz/tq kembali tanpa cache timestamp yang memicu Error 400, terbukti ampuh memaksa data struktural terbaca
+csv_url = f"https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet=Detail%20OPS"
 
 st.title("💳 Financial Operations Dashboard")
 st.caption("Analisa Real-Time Pengeluaran & Anggaran Operasional Finansial (Sheet: Detail OPS)")
 st.markdown("---")
 
-# 2. FUNGSI PEMUAT DATA AMAN
+# 2. FUNGSI PEMUAT DATA DENGAN PREVENTING TIMEOUT
 @st.cache_data(ttl=5)
 def load_financial_data(url):
     try:
-        # Membaca CSV langsung menggunakan pandas dengan engine default yang stabil
         df = pd.read_csv(url)
         return df
     except Exception as e:
@@ -53,48 +52,54 @@ elif df_raw is None or df_raw.empty:
     st.stop()
 
 else:
-    # 4. EKSEKUSI JIKA DATA BERHASIL DIUNDUH
+    # 4. MEMBERSIHKAN KOLOM UNNAMED AKIBAT BARIS KOSONG DI SPREADSHEET
+    # Menghapus kolom yang seluruh barisnya kosong sekaligus mengabaikan baris rusak di atas
     df = df_raw.dropna(how='all', axis=1).copy()
-    
+    df = df.dropna(how='all', axis=0)
+
     # =========================================================================
     # ⚠️ KUNCI NAMA KOLOM MANUAL SESUAI DI GOOGLE SHEETS ANDA
     # =========================================================================
-    KOLOM_TEXT_NOTA_ASLI = "Total Biaya Sesuai Nota" # Kolom teks berisi Rp yang akan dihitung ke grafik
+    KOLOM_TEXT_NOTA_ASLI = "Total Biaya Sesuai Nota" 
     PIC_KOLOM_ASLI       = "PIC"                      
     TIM_KOLOM_ASLI       = "Tim"                      
     TAHAP_KOLOM_ASLI     = "Tahap"                    
     TANGGAL_KOLOM_ASLI   = "Tanggal"                  
     # =========================================================================
 
-    # Validasi apakah kolom nominal ada
+    # Validasi dan penanganan darurat dinamis jika kolom masih tidak terbaca akibat spasi di spreadsheet
     if KOLOM_TEXT_NOTA_ASLI not in df.columns:
-        st.error(f"❌ Kolom bernama '{KOLOM_TEXT_NOTA_ASLI}' tidak ditemukan.")
-        st.info(f"Kolom yang terdeteksi saat ini adalah: {list(df.columns)}")
-        st.markdown("💡 *Silakan sesuaikan tulisan di baris kode KOLOM_TEXT_NOTA_ASLI dengan nama kolom yang benar.*")
-        st.stop()
+        # Cari nama kolom terdekat yang mengandung kata 'Nota' atau 'Biaya' jika terjadi salah ketik di spreadsheet
+        kolom_mirip = [c for c in df.columns if 'Nota' in str(c) or 'Biaya' in str(c)]
+        if kolom_mirip:
+            KOLOM_TEXT_NOTA_ASLI = kolom_mirip[0]
+        else:
+            st.error(f"❌ Kolom bernama '{KOLOM_TEXT_NOTA_ASLI}' tidak ditemukan.")
+            st.info(f"Kolom yang terdeteksi saat ini adalah: {list(df.columns)}")
+            st.markdown("💡 *Pastikan baris pertama di Google Sheets Anda langsung berisi Judul Kolom (Header).*")
+            st.stop()
 
     # --- PROSES PEMBERSIHAN DATA ---
-    # Simpan teks asli untuk ditampilkan berdampingan di tabel bawah
     df['Teks_Mentah_Nota'] = df[KOLOM_TEXT_NOTA_ASLI].astype(str).str.strip()
     
-    # Bersihkan string agar dikonversi murni menjadi angka untuk hitungan grafik & nominal total
+    # Bersihkan teks nota asli menjadi angka murni
     df[KOLOM_TEXT_NOTA_ASLI] = df[KOLOM_TEXT_NOTA_ASLI].astype(str).str.replace('Rp', '', regex=False)
     df[KOLOM_TEXT_NOTA_ASLI] = df[KOLOM_TEXT_NOTA_ASLI].str.replace('.', '', regex=False)
     df[KOLOM_TEXT_NOTA_ASLI] = df[KOLOM_TEXT_NOTA_ASLI].str.replace(',', '.', regex=False)
     df[KOLOM_TEXT_NOTA_ASLI] = df[KOLOM_TEXT_NOTA_ASLI].str.replace(r'[^\d.-]', '', regex=True)
     df[KOLOM_TEXT_NOTA_ASLI] = pd.to_numeric(df[KOLOM_TEXT_NOTA_ASLI], errors='coerce').fillna(0)
 
-    # Penanganan format tanggal secara aman (Mencegah AttributeError .dt)
+    # Penanganan format tanggal secara aman (Menggunakan pd.to_datetime dengan saringan parsial objek)
     if TANGGAL_KOLOM_ASLI in df.columns:
         df[TANGGAL_KOLOM_ASLI] = pd.to_datetime(df[TANGGAL_KOLOM_ASLI], errors='coerce')
-        df[TANGGAL_KOLOM_ASLI] = df[TANGGAL_KOLOM_ASLI].fillna(pd.Timestamp.now())
-        df['Bulan'] = df[TANGGAL_KOLOM_ASLI].dt.strftime('%B')
-        df['Tahun-Bulan'] = df[TANGGAL_KOLOM_ASLI].dt.strftime('%Y-%m')
+        # Buat kolom Bulan aman tanpa mengandalkan properti string murni .dt jika ada baris kosong
+        df['Bulan'] = df[TANGGAL_KOLOM_ASLI].apply(lambda x: x.strftime('%B') if pd.notnull(x) else "Tidak Ada Data")
+        df['Tahun-Bulan'] = df[TANGGAL_KOLOM_ASLI].apply(lambda x: x.strftime('%Y-%m') if pd.notnull(x) else "Tidak Ada Data")
     else:
         df['Bulan'] = "Tidak Ada Data Tanggal"
         df['Tahun-Bulan'] = "Tidak Ada Data Tanggal"
 
-    # Perhitungan Kewajaran Berdasarkan Nilai Tengah (Median) Angka Hasil Bersih Teks Nota
+    # Perhitungan Kewajaran Berdasarkan Nilai Tengah (Median)
     median_ops = df[KOLOM_TEXT_NOTA_ASLI].median() if df[KOLOM_TEXT_NOTA_ASLI].median() > 0 else 500000
     def cek_kewajaran(row):
         nominal = row[KOLOM_TEXT_NOTA_ASLI]
@@ -109,7 +114,7 @@ else:
 
     df['Analisa Kewajaran'] = df.apply(cek_kewajaran, axis=1)
 
-    # Penanganan konversi string filter secara aman agar tidak crash .fillna
+    # Pembersihan string filter kolom
     for c in [PIC_KOLOM_ASLI, TAHAP_KOLOM_ASLI, TIM_KOLOM_ASLI]:
         if c in df.columns:
             df[c] = df[c].fillna('').astype(str).str.strip().replace('nan', '')
@@ -130,7 +135,7 @@ else:
     else:
         selected_tahap = "Semua Tahap"
 
-    unique_bulan = ["Semua Bulan"] + sorted([x for x in df['Bulan'].dropna().unique() if x])
+    unique_bulan = ["Semua Bulan"] + sorted([x for x in df['Bulan'].unique() if x])
     selected_bulan = st.sidebar.selectbox("📅 Pilih Bulan", unique_bulan)
 
     if st.sidebar.button("🔄 Reset & Refresh Dashboard", use_container_width=True):
@@ -150,7 +155,7 @@ else:
 
     # --- CARD KPI METRIKS DI UTAMA (TOTAL DI AWAL) ---
     total_transaksi = len(df_filtered)
-    total_pengeluaran = df_filtered[KOLOM_TEXT_NOTA_ASLI].sum() # Variabel diperbaiki dari typo 'total_pengraw'
+    total_pengeluaran = df_filtered[KOLOM_TEXT_NOTA_ASLI].sum() 
     rata_rata_biaya = df_filtered[KOLOM_TEXT_NOTA_ASLI].mean() if total_transaksi > 0 else 0
 
     col1, col2, col3 = st.columns(3)
@@ -169,8 +174,11 @@ else:
     with col_chart1:
         st.subheader("📅 Tren Total Pengeluaran Berdasarkan Bulan")
         if not df_filtered.empty and total_pengeluaran > 0:
-            trend_data = df_filtered.groupby('Tahun-Bulan')[KOLOM_TEXT_NOTA_ASLI].sum()
-            st.line_chart(trend_data, color="#10b981") # Tanda kutip string literal ditutup dengan benar
+            trend_data = df_filtered[df_filtered['Tahun-Bulan'] != "Tidak Ada Data"].groupby('Tahun-Bulan')[KOLOM_TEXT_NOTA_ASLI].sum()
+            if not trend_data.empty:
+                st.line_chart(trend_data, color="#10b981")
+            else:
+                st.info("💡 Data tanggal tidak valid untuk membuat grafik tren.")
         else:
             st.info("💡 Grafik tren kosong karena nominal Rp 0 atau filter tidak cocok.")
 
@@ -195,7 +203,8 @@ else:
         
         df_display[KOLOM_TEXT_NOTA_ASLI] = df_display[KOLOM_TEXT_NOTA_ASLI].map("Rp {:,.0f}".format)
         if TANGGAL_KOLOM_ASLI in df_display.columns:
-            df_display[TANGGAL_KOLOM_ASLI] = df_display[TANGGAL_KOLOM_ASLI].dt.strftime('%Y-%m-%d')
+            # Gunakan penanganan lambda string format manual agar terhindar dari NaT error visualizer
+            df_display[TANGGAL_KOLOM_ASLI] = df_display[TANGGAL_KOLOM_ASLI].apply(lambda x: x.strftime('%Y-%m-%d') if pd.notnull(x) else "")
 
         st.dataframe(df_display, use_container_width=True, hide_index=True)
     else:
