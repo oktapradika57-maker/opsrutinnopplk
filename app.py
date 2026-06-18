@@ -32,7 +32,7 @@ if df_raw is not None and not df_raw.empty:
     # =========================================================================
     # ⚠️ BERSIHKAN & SESUAIKAN NAMA KOLOM DI BAWAH INI JIKA TERJADI KOTAK MERAH
     # =========================================================================
-    NOMINAL_KOLOM_ASLI = "Total Biaya Sesuai Nota"  # Kolom Nominal Biaya
+    NOMINAL_KOLOM_ASLI = "Total Biaya (Sesuai Nota)"  # Kolom Nominal Biaya
     BBM_KOLOM_ASLI     = "Liter BBM"                # Kolom Pengisian BBM (Liter)
     KM_KOLOM_ASLI      = "KM"                       # Kolom Jarak Tempuh (KM)
     PIC_KOLOM_ASLI     = "PIC"                      # Kolom Nama Requestor
