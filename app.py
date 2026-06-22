@@ -13,10 +13,10 @@ st.set_page_config(
 if "active_menu" not in st.session_state:
     st.session_state.active_menu = "VARCOST"
 
-# Tautan Spreadsheet Utama (Database Reg Kalimantan)
+# Tautan Spreadsheet Utama Anda (Database Reg Kalimantan)
 URL_SPREADSHEET = "https://google.com"
 
-# Fungsi resmi menggunakan st.connection untuk membaca data dari Google Sheet publik
+# Fungsi resmi menggunakan st.connection dengan penanganan error Nama Tab secara dinamis
 @st.cache_data(ttl=60)
 def ambil_data_sheet(nama_sheet):
     try:
@@ -24,13 +24,24 @@ def ambil_data_sheet(nama_sheet):
         df = conn.read(spreadsheet=URL_SPREADSHEET, worksheet=nama_sheet)
         return df
     except Exception as e:
-        st.error(f"Gagal memuat sheet '{nama_sheet}': {e}")
-        return pd.DataFrame()
+        # Jika error 404, coba toleransi variasi penulisan dengan huruf kecil / kapital awal
+        try:
+            conn = st.connection("gsheets", type=GSheetsConnection)
+            df = conn.read(spreadsheet=URL_SPREADSHEET, worksheet=nama_sheet.title())
+            return df
+        except:
+            try:
+                conn = st.connection("gsheets", type=GSheetsConnection)
+                df = conn.read(spreadsheet=URL_SPREADSHEET, worksheet=nama_sheet.lower())
+                return df
+            except:
+                st.error(f"Gagal memuat sheet '{nama_sheet}': {e}")
+                st.info(f"⚠️ Silakan pastikan nama tab di Google Sheets Anda sudah ditulis persis (Contoh: '{nama_sheet}').")
+                return pd.DataFrame()
 
 # ==========================================
 # 2. NAVIGASI ATAS (8 MENU PRESISI & INSTAN)
 # ==========================================
-# Membagi layar menjadi 8 kolom simetris sesuai dengan seluruh resource tab yang tersedia
 col1, col2, col3, col4, col5, col6, col7, col8 = st.columns(8)
 
 with col1:
@@ -91,13 +102,13 @@ def halaman_varcost():
         if not df_varcost.empty and 'Bulan' in df_varcost.columns and 'Revenue' in df_varcost.columns:
             st.line_chart(df_varcost.set_index('Bulan')[['Revenue']])
         else:
-            st.info("💡 Grafik pendapatan otomatis terbentuk jika kolom 'Bulan' dan 'Revenue' tersedia di dalam sheet.")
+            st.info("💡 Grafik pendapatan otomatis terbentuk jika kolom 'Bulan' and 'Revenue' tersedia di dalam sheet VARCOST.")
             
     elif opsi_analisa == "Net Income Analysis (Laba Bersih)":
         if not df_varcost.empty and 'Bulan' in df_varcost.columns and 'Net Income' in df_varcost.columns:
             st.bar_chart(df_varcost.set_index('Bulan')[['Net Income']])
         else:
-            st.info("💡 Grafik laba bersih otomatis terbentuk jika kolom 'Bulan' dan 'Net Income' tersedia di dalam sheet.")
+            st.info("💡 Grafik laba bersih otomatis terbentuk jika kolom 'Bulan' and 'Net Income' tersedia di dalam sheet VARCOST.")
 
     st.write("")
     st.subheader("📋 Data Sheet Riil: VARCOST")
@@ -126,17 +137,16 @@ def halaman_data_project():
     else:
         st.caption("Lembar kerja 'data Project' kosong atau tidak ditemukan.")
 
-# --- MENU 4: TAB DATA ASSET (DENGAN SUB-MENU KUT & RENTAL) ---
+# --- MENU 4: TAB DATA ASSET (DENGAN FILTER SUB-MENU KUT & RENTAL) ---
 def halaman_data_asset():
     st.title("🏢 Asset Management Inventory (data Asset)")
     st.caption("Manajemen aset perangkat core, transmisi, menara (tower), dan fasilitas penunjang.")
     st.write("")
 
-    # 1. Ambil data asli dari Google Sheets tab 'data Asset'
     df_asset = ambil_data_sheet("data Asset")
 
     if not df_asset.empty:
-        # 2. Membuat Sub-Menu Presisi Menggunakan st.radio (Berjejer Horizontal)
+        # Membuat Sub-Menu Presisi Menggunakan st.radio (Berjejer Horizontal)
         sub_menu = st.radio(
             "Pilih Kategori Kategori Asset:",
             ["Semua Asset", "Asset KUT", "Asset Rental"],
@@ -144,45 +154,36 @@ def halaman_data_asset():
         )
         st.write("")
 
-        # 💡 SILAKAN SESUAIKAN: Ganti 'Jenis Asset' di bawah ini dengan nama kolom asli di Google Sheets Anda
+        # 💡 SILAKAN SESUAIKAN: Ubah nilai teks di bawah ini sesuai nama kolom pemisah asli di Google Sheet Anda
         nama_kolom_pemisah = "Jenis Asset" 
 
-        # Jalankan pengecekan apakah kolom pemisah tersebut ada di spreadsheet
         if nama_kolom_pemisah in df_asset.columns:
-            
             if sub_menu == "Semua Asset":
                 st.subheader("📋 Daftar Seluruh Asset")
                 st.dataframe(df_asset, use_container_width=True, hide_index=True)
                 
             elif sub_menu == "Asset KUT":
                 st.subheader("📦 Daftar Asset KUT")
-                # Memfilter baris data yang mengandung kata 'KUT' (tidak sensitif huruf besar/kecil)
                 df_kut = df_asset[df_asset[nama_kolom_pemisah].astype(str).str.contains("KUT", case=False, na=False)]
-                
                 if not df_kut.empty:
                     st.dataframe(df_kut, use_container_width=True, hide_index=True)
                 else:
-                    st.info("Tidak ada baris data dengan kategori 'KUT' ditemukan pada kolom tersebut.")
+                    st.info("Tidak ada baris data dengan kategori 'KUT' ditemukan.")
                     
             elif sub_menu == "Asset Rental":
                 st.subheader("🔑 Daftar Asset Rental")
-                # Memfilter baris data yang mengandung kata 'Rental' (tidak sensitif huruf besar/kecil)
                 df_rental = df_asset[df_asset[nama_kolom_pemisah].astype(str).str.contains("Rental", case=False, na=False)]
-                
                 if not df_rental.empty:
                     st.dataframe(df_rental, use_container_width=True, hide_index=True)
                 else:
-                    st.info("Tidak ada baris data dengan kategori 'Rental' ditemukan pada kolom tersebut.")
-        
+                    st.info("Tidak ada baris data dengan kategori 'Rental' ditemukan.")
         else:
-            # Jika nama kolom belum diubah/tidak sesuai, tampilkan semua data sebagai cadangan aman agar tidak error
+            # Jika kolom pemisah belum ada/belum sesuai, tampilkan semua data agar aman dari crash
             st.warning(f"Kolom pemisah '{nama_kolom_pemisah}' tidak ditemukan di spreadsheet. Menampilkan seluruh data.")
             st.dataframe(df_asset, use_container_width=True, hide_index=True)
-            st.info("💡 **Tips:** Silakan buka file `app.py`, lalu ganti variabel `nama_kolom_pemisah = 'Jenis Asset'` sesuai nama kolom asli di Google Sheets Anda.")
-            
+            st.info("💡 **Tips:** Silakan sesuaikan variabel `nama_kolom_pemisah` pada kode sesuai kolom pemisah di sheet Anda.")
     else:
         st.caption("Lembar kerja 'data Asset' kosong atau tidak ditemukan.")
-
 
 # --- MENU 5: TAB DATA KPI ---
 def halaman_data_kpi():
@@ -214,34 +215,6 @@ def halaman_data_pjb():
     else:
         st.caption("Lembar kerja 'data PJB aging' kosong atau tidak ditemukan.")
 
-# --- MENU 8: TAB MONITORING MBP / PROGRESS MATELINE PLACEHOLDER ---
+# --- MENU 8: TAB MONITORING MBP / PROGRESS MATELINE STRUCTURAL PLACEHOLDER ---
 def halaman_monitoring_mbp():
     st.title("📡 Monitoring MBP & Progress Mateline Management")
-    st.caption("Wadah monitoring ketersediaan daya cadangan (Mobile Backup Power) dan logistik pasokan material.")
-    
-    # Membaca data jika di masa depan Anda menambahkan tab ini ke spreadsheet utama Anda
-    df_mbp = ambil_data_sheet("Monitoring MBP")
-    if not df_mbp.empty:
-        st.dataframe(df_mbp, use_container_width=True, hide_index=True)
-    else:
-        st.info("💡 Struktur siap pakai. Data live otomatis termuat di halaman ini apabila Anda menambahkan tab baru bernama 'Monitoring MBP' ke Google Sheets Anda.")
-
-# ==========================================
-# 4. ROUTER EKSEKUSI HALAMAN
-# ==========================================
-if st.session_state.active_menu == "VARCOST":
-    halaman_varcost()
-elif st.session_state.active_menu == "DATA_PM":
-    halaman_data_pm()
-elif st.session_state.active_menu == "DATA_PROJECT":
-    halaman_data_project()
-elif st.session_state.active_menu == "DATA_ASSET":
-    halaman_data_asset()
-elif st.session_state.active_menu == "DATA_KPI":
-    halaman_data_kpi()
-elif st.session_state.active_menu == "DATA_OPERATIONAL":
-    halaman_data_operational()
-elif st.session_state.active_menu == "DATA_PJB":
-    halaman_data_pjb()
-elif st.session_state.active_menu == "MONITORING_MBP":
-    halaman_monitoring_mbp()
