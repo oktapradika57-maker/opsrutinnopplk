@@ -76,7 +76,7 @@ def halaman_varcost():
         ["Revenue Analysis (Pendapatan)", "Net Income Analysis (Laba Bersih)"]
     )
 
-    # Logika Tampilan Berdasarkan Dropdown (SUDAH DIPERBAIKI)
+    # Logika Tampilan Berdasarkan Dropdown
     if opsi_analisa == "Revenue Analysis (Pendapatan)":
         r1, r2 = st.columns(2)
         with r1:
@@ -97,7 +97,7 @@ def halaman_varcost():
         with i1:
             st.success("💰 **Tren Laba Bersih Perusahaan (2026)**")
             data_inc = pd.DataFrame({
-                "Net Income (Miliar IDR)": [1800, 1850, 1920, 1890, 1980, 2100]
+                "Net Income (Miliar IDR)": [450, 480, 510, 490, 530, 580]
             }, index=["Jan", "Feb", "Mar", "Apr", "May", "Jun"])
             st.bar_chart(data_inc)
         with i2:
@@ -129,7 +129,7 @@ def halaman_varcost():
             {
                 "IP Transit":,
                 "BTS Fuel & Power":,
-                "Fiber Lease Lines": [305, 308, 310, 312, 314, 315]
+                "Fiber Lease Lines": [300, 305, 310, 308, 312, 315]
             },
             index=["Jan", "Feb", "Mar", "Apr", "May", "Jun"]
         )
