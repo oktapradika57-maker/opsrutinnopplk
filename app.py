@@ -10,7 +10,7 @@ st.markdown("""
     /* 1. MENGATUR BACKGROUND HALAMAN */
     .stApp {
         /* Ganti URL di bawah ini dengan link gambar/logo Kinarya Utama Teknik Anda */
-        background-image: url("https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEi9rl3YaSTLJw3M-PoWjndDGvx6DG3OO9yJxBOh1a8ZUyPG_6yk0TPnOvoEe7mt6yiD858V8dNcPmIay6e6LBVDf2EH0U9viZXZSuH6f-DM8dl3Q-NTHY3L0WTd3plcbKUOlgefUU6JfLC-rcIRyeDvM3S7gXcCWZkjrMNVSNbH3uLDKoIGKyVECGRGXSA/w680/koperasi-jasa-konstruksi-tower-event-organizer-network-monitoring-telekomunikasi-kisel-group-logo-kut.png");
+        background-image: url("https://png.pngtree.com/background/20221028/original/pngtree-hud-futuristic-earth-planet-world-map-hologram-with-digital-interface-picture-image_1927283.jpg");
         background-color: #f0f2f6; /* Warna dasar jika gambar tidak dimuat */
         background-size: cover;
         background-position: center;
