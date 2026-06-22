@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import streamlit.components.v1 as components
+import urllib.parse
 
 # 1. Konfigurasi Halaman & Tema Gelap Ops Center
 st.set_page_config(
@@ -11,12 +12,12 @@ st.set_page_config(
 
 # Inisialisasi session state untuk navigasi halaman jika belum ada
 if "active_menu" not in st.session_state:
-    st.session_state.active_menu = "DATA SVA"
+    st.session_state.active_menu = "VARCOST"
 if "play_sound" not in st.session_state:
     st.session_state.play_sound = False
 
-# Tautan Dasar Berbagi Google Sheets Anda (Database Reg Kalimantan)
-URL_UTAMA = "https://google.com"
+# ID Spreadsheet Utama Anda (Dihasilkan dari link publik Database Reg Kalimantan Anda)
+SPREADSHEET_ID = "1hIeT51_SVdNrz62s93zpZNyqepBMdNCa-mDRH-wVOIw"
 
 # 🔊 FUNGSI EFEK SUARA KLIK (Audio HTML JavaScript)
 def putar_suara_klik():
@@ -33,14 +34,14 @@ if st.session_state.play_sound:
     putar_suara_klik()
     st.session_state.play_sound = False # Reset state suara
 
-# 🌐 FUNGSI TERBARU: Direct CSV Export Bypass (Anti-Block & Bebas Layar Kosong)
+# 🌐 FUNGSI: Membaca Google Sheet via URL Export CSV (Aman dari Masalah Spasi & Huruf Besar/Kecil)
 @st.cache_data(ttl=5) # Cache dipangkas menjadi 5 detik untuk pengetesan realtime Anda
 def ambil_data_sheet(nama_sheet):
     try:
-        sheet_aman = nama_sheet.replace(" ", "%20")
-        # Format ekspor langsung menggunakan tautan penuh terbukti jauh lebih stabil menembus server Google
-        url_direct_csv = f"{URL_UTAMA}/export?format=csv&sheet={sheet_aman}"
-        df = pd.read_csv(url_direct_csv)
+        # Mengubah teks nama sheet agar aman bagi URL (contoh: 'data SVA' menjadi 'data%20SVA')
+        sheet_encoded = urllib.parse.quote(nama_sheet)
+        url_csv = f"https://google.com{SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet={sheet_encoded}"
+        df = pd.read_csv(url_csv)
         return df
     except Exception as e:
         st.sidebar.error(f"Error Jaringan Sheet '{nama_sheet}': {e}")
@@ -55,7 +56,6 @@ with col1:
     if st.button("💰\n\nVARCOST", use_container_width=True, key="btn_varcost"):
         st.session_state.active_menu = "VARCOST"
         st.session_state.play_sound = True
-        st.grid = None
         st.rerun()
 with col2:
     if st.button("🛠️\n\nDATA PM", use_container_width=True, key="btn_pm"):
@@ -120,11 +120,11 @@ def halaman_varcost():
     df_sva = ambil_data_sheet("data SVA")
 
     if not df_sva.empty:
-        # Bersihkan spasi nama kolom secara manual
+        # Bersihkan nama kolom dari spasi liar di Google Sheets
         df_sva.columns = df_sva.columns.str.strip()
         
         try:
-            # Sesuai instruksi Anda: Kolom F (Revenue) ke-5, Kolom G (Bulan) ke-6, Kolom T (Net Income) ke-19
+            # Berdasarkan instruksi Anda: Kolom F (Revenue) ke-5, Kolom G (Bulan) ke-6, Kolom T (Net Income) ke-19
             col_revenue = df_sva.columns[5]   # Kolom F
             col_bulan = df_sva.columns[6]     # Kolom G
             col_income = df_sva.columns[19]   # Kolom T
@@ -142,7 +142,6 @@ def halaman_varcost():
                 st.metric(label="Net Income Periode Terakhir", value=str(df_sva[col_income].iloc[-1]))
         except Exception as err:
             st.error(f"Gagal memetakan posisi kolom fisik F, G, T pada tab 'data SVA': {err}")
-            st.info("Pastikan jumlah kolom di dalam tab 'data SVA' Anda sudah mencapai kolom T (minimal 20 kolom).")
     else:
         st.info("💡 Grafik finansial akan muncul setelah tab 'data SVA' berhasil ditarik.")
 
@@ -150,12 +149,10 @@ def halaman_varcost():
 
     # Menampilkan Tabel Utama 'VARCOST'
     st.subheader("📋 Data Sheet Riil: data SVA")
-    df_varcost = ambil_data_sheet("data SVA")
-    if not df_varcost.empty:
-        st.dataframe(df_varcost, use_container_width=True, hide_index=True)
+    if not df_sva.empty:
+        st.dataframe(df_sva, use_container_width=True, hide_index=True)
     else:
-        # JIKA GAGAL, BERIKAN TOMBOL RE-TRY DIAGNOSTIK DI HALAMAN UTAMA
-        st.warning("Data tabel 'VARCOST' kosong atau sedang memuat.")
+        st.warning("Data tabel 'data SVA' kosong atau sedang memuat.")
         if st.button("⚡ Tarik Ulang Koneksi Google Sheets Now", key="btn_retry_internal"):
             st.cache_data.clear()
             st.rerun()
