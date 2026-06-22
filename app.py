@@ -75,7 +75,7 @@ st.markdown("---")
 
 # --- HALAMAN UTAMA (VARCOST TELCO + DROPDOWN ANALISA FINANSIAL) ---
 def halaman_varcost():
-    st.title("🌐 Telecom Variable Cost & Financial Analysis")
+    st.title("🌐 KUT Variable Cost & Financial Analysis")
     st.caption("Memantau data keuangan dan fluktuasi biaya operasional wilayah Kalimantan langsung dari Google Sheets.")
     st.write("")
 
@@ -83,7 +83,7 @@ def halaman_varcost():
     df_varcost = ambil_data_sheet("Monitoring Varcost")
 
     # Dropdown Analisa Finansial (Revenue & Income)
-    st.subheader("📊 Corporate Financial Analysis")
+    st.subheader("📊 KUT Financial Analysis")
     opsi_analisa = st.selectbox(
         "Pilih Metrik Analisis Finansial:",
         ["Revenue Analysis (Pendapatan)", "Net Income Analysis (Laba Bersih)"]
@@ -126,7 +126,7 @@ def halaman_varcost():
 
 # --- HALAMAN MENU LAINNYA SESUAI TAB SPREADSHEET ---
 def halaman_kpi():
-    st.title("📈 Telecom Network KPI")
+    st.title("📈 Network KPI")
     df_kpi = ambil_data_sheet("data KPI")
     if not df_kpi.empty:
         st.dataframe(df_kpi, use_container_width=True, hide_index=True)
@@ -142,7 +142,7 @@ def halaman_maintenance():
         st.info("Menampilkan jadwal pemeliharaan dari sheet 'data PM'.")
 
 def halaman_asset():
-    st.title("🏢 Telecom Asset Inventory")
+    st.title("🏢 KUT Asset Inventory")
     df_asset = ambil_data_sheet("data Asset")
     if not df_asset.empty:
         st.dataframe(df_asset, use_container_width=True, hide_index=True)
