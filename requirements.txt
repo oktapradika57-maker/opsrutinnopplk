@@ -1,5 +1,3 @@
-streamlit
+streamlit>=1.22.0
 pandas
-gspread
-oauth2client
-plotly
+st-gsheets-connection
