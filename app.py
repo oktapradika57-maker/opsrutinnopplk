@@ -7,7 +7,7 @@ st.markdown("""
     <style>
     /* Styling tombol agar menjadi Kartu 3D Besar */
     div.stButton > button {
-        width: 100% !important;
+        width: 250% !important;
         height: 250px !important; 
         border-radius: 200px !important;
         border: none !important;
