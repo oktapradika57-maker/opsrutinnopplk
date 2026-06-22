@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 
 # Konfigurasi Halaman (Wajib di paling atas)
-st.set_page_config(page_title="Corporate Dashboard", layout="wide", page_icon="📊")
+st.set_page_config(page_title="PT Kinarya Utama Teknik", layout="wide", page_icon="📊")
 
 # --- CUSTOM CSS UNTUK TAMPILAN 3D & BACKGROUND ---
 st.markdown("""
