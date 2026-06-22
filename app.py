@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-import urllib.parse
+from streamlit_gsheets import GSheetsConnection
 
 # 1. Konfigurasi Halaman & Tema Gelap ala Telco Ops Center
 st.set_page_config(
@@ -13,17 +13,16 @@ st.set_page_config(
 if "active_menu" not in st.session_state:
     st.session_state.active_menu = "VARCOST"
 
-# ID Spreadsheet Utama Anda (Database Reg Kalimantan)
-SPREADSHEET_ID = "1hIeT51_SVdNrz62s93zpZNyqepBMdNCa-mDRH-wVOIw"
+# Tautan Spreadsheet Utama Anda (Database Reg Kalimantan)
+URL_SPREADSHEET = "https://google.com"
 
-# Fungsi membaca Google Sheet publik menggunakan metode export CSV yang aman dari karakter spasi
-@st.cache_data(ttl=60)  # Segarkan data otomatis setiap 60 detik
+# Fungsi resmi menggunakan st.connection (Aman dari pemblokiran DNS server)
+@st.cache_data(ttl=60)
 def ambil_data_sheet(nama_sheet):
     try:
-        # Mengubah karakter spasi menjadi format URL-safe (contoh: 'data Operational' -> 'data%20Operational')
-        sheet_encoded = urllib.parse.quote(nama_sheet)
-        url = f"https://google.com{SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet={sheet_encoded}"
-        df = pd.read_csv(url)
+        # Menggunakan koneksi bawaan Streamlit Cloud yang terotentikasi stabil
+        conn = st.connection("gsheets", type=GSheetsConnection)
+        df = conn.read(spreadsheet=URL_SPREADSHEET, worksheet=nama_sheet)
         return df
     except Exception as e:
         st.error(f"Gagal memuat sheet '{nama_sheet}': {e}")
@@ -75,15 +74,14 @@ st.markdown("---")
 
 # --- HALAMAN UTAMA (VARCOST TELCO + DROPDOWN ANALISA FINANSIAL) ---
 def halaman_varcost():
-    st.title("🌐 KUT Variable Cost & Financial Analysis")
+    st.title("🌐 Telecom Variable Cost & Financial Analysis")
     st.caption("Memantau data keuangan dan fluktuasi biaya operasional wilayah Kalimantan langsung dari Google Sheets.")
     st.write("")
 
-    # Memuat lembar kerja utama "Monitoring Varcost"
     df_varcost = ambil_data_sheet("Monitoring Varcost")
 
     # Dropdown Analisa Finansial (Revenue & Income)
-    st.subheader("📊 KUT Financial Analysis")
+    st.subheader("📊 Corporate Financial Analysis")
     opsi_analisa = st.selectbox(
         "Pilih Metrik Analisis Finansial:",
         ["Revenue Analysis (Pendapatan)", "Net Income Analysis (Laba Bersih)"]
@@ -117,7 +115,6 @@ def halaman_varcost():
 
     st.markdown("---")
 
-    # Baris Tabel Utama dari Google Sheets
     st.subheader("📋 Seluruh Baris Data Realtime 'Monitoring Varcost'")
     if not df_varcost.empty:
         st.dataframe(df_varcost, use_container_width=True, hide_index=True)
@@ -126,69 +123,46 @@ def halaman_varcost():
 
 # --- HALAMAN MENU LAINNYA SESUAI TAB SPREADSHEET ---
 def halaman_kpi():
-    st.title("📈 Network KPI")
+    st.title("📈 Telecom Network KPI")
     df_kpi = ambil_data_sheet("data KPI")
     if not df_kpi.empty:
         st.dataframe(df_kpi, use_container_width=True, hide_index=True)
-    else:
-        st.info("Menampilkan baris data operasional dari sheet 'data KPI'.")
 
 def halaman_maintenance():
     st.title("🛠️ Preventive & Corrective Maintenance")
     df_pm = ambil_data_sheet("data PM")
     if not df_pm.empty:
         st.dataframe(df_pm, use_container_width=True, hide_index=True)
-    else:
-        st.info("Menampilkan jadwal pemeliharaan dari sheet 'data PM'.")
 
 def halaman_asset():
-    st.title("🏢 KUT Asset Inventory")
+    st.title("🏢 Telecom Asset Inventory")
     df_asset = ambil_data_sheet("data Asset")
     if not df_asset.empty:
         st.dataframe(df_asset, use_container_width=True, hide_index=True)
-    else:
-        st.info("Menampilkan inventaris aset dari sheet 'data Asset'.")
 
 def halaman_project():
     st.title("🚀 Network Rollout & Project Deployment")
     df_project = ambil_data_sheet("data Project")
     if not df_project.empty:
         st.dataframe(df_project, use_container_width=True, hide_index=True)
-    else:
-        st.info("Menampilkan daftar proyek berjalan dari sheet 'data Project'.")
 
 def halaman_operational():
     st.title("⚙️ Network Operations Center (NOC)")
     df_ops = ambil_data_sheet("data Operational")
     if not df_ops.empty:
         st.dataframe(df_ops, use_container_width=True, hide_index=True)
-    else:
-        st.info("Menampilkan data beban harian lapangan dari sheet 'data Operational'.")
 
-# --- HALAMAN MONITORING MBP ---
 def halaman_monitoring_mbp():
     st.title("📡 Monitoring MBP (Mobile Backup Power)")
-    st.caption("Melacak status penugasan unit genset mobile regional.")
     df_mbp = ambil_data_sheet("Monitoring MBP")
     if not df_mbp.empty:
         st.dataframe(df_mbp, use_container_width=True, hide_index=True)
-    else:
-        st.info("Menampilkan baris data dari sheet 'Monitoring MBP'.")
 
-# --- HALAMAN PROGRESS MATELINE ---
 def halaman_progress_mateline():
     st.title("📋 Progress Mateline & Material Management")
-    st.caption("Manajemen rantai pasok material infrastruktur telekomunikasi.")
     df_mateline = ambil_data_sheet("Progress Mateline")
     if not df_mateline.empty:
-        if 'Nama_Material' in df_mateline.columns and 'Persentase' in df_mateline.columns:
-            for index, row in df_mateline.iterrows():
-                st.write(row['Nama_Material'])
-                st.progress(float(row['Persentase']), text=f"{int(row['Persentase']*100)}% Pengadaan")
-        else:
-            st.dataframe(df_mateline, use_container_width=True, hide_index=True)
-    else:
-        st.info("Menampilkan baris data dari sheet 'Progress Mateline'.")
+        st.dataframe(df_mateline, use_container_width=True, hide_index=True)
 
 # ==========================================
 # 4. ROUTER EKSEKUSI HALAMAN
