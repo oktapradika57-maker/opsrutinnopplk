@@ -2,14 +2,14 @@ import streamlit as st
 
 st.set_page_config(page_title="Corporate Dashboard", layout="wide")
 
-# CSS untuk membuat tombol terlihat seperti kartu
+# --- CSS PRESISI MUTLAK ---
 st.markdown("""
     <style>
-    /* Styling tombol agar lebih menarik */
+    /* Mengunci ukuran tombol agar tidak peduli isi teksnya */
     div.stButton > button {
         width: 100% !important;
-        height: 180px !important;
-        border-radius: 15px !important;
+        height: 180px !important; /* Tinggi tetap */
+        border-radius: 20px !important;
         border: 2px solid #555 !important;
         background-color: #262730 !important;
         color: white !important;
@@ -20,11 +20,10 @@ st.markdown("""
         justify-content: center !important;
         align-items: center !important;
         transition: 0.3s !important;
+        padding: 0 !important;
+        overflow: hidden !important;
     }
-    div.stButton > button:hover {
-        border-color: #6c63ff !important;
-        transform: translateY(-5px);
-    }
+    div.stButton > button:hover { border-color: #6c63ff !important; transform: scale(1.02); }
     </style>
 """, unsafe_allow_html=True)
 
@@ -38,7 +37,7 @@ if st.session_state.current_page == "Halaman Depan":
     st.title("✨ Dashboard Kinarya Utama Teknik")
     st.markdown("---")
     
-    # Daftar Menu dengan Emoji sebagai Icon (pasti muncul)
+    # List menu
     menus = [
         ("💰", "Varcost", "Monitoring Varcost"),
         ("🎯", "KPI", "Monitoring KPI"),
@@ -48,13 +47,17 @@ if st.session_state.current_page == "Halaman Depan":
         ("⚙️", "Operational", "Monitoring Operational")
     ]
     
-    cols = st.columns(3)
+    # Menggunakan columns dengan lebar yang sama rata (3 kolom)
+    cols = st.columns([1, 1, 1])
+    
     for i, (icon, label, target) in enumerate(menus):
-        with cols[i % 3]:
-            # Kita gunakan format emoji + label agar pasti tampil
-            if st.button(f"{icon}\n\n{label}", key=label):
+        col_idx = i % 3
+        with cols[col_idx]:
+            # Menggunakan string yang disatukan agar tombol tidak melebar secara dinamis
+            btn_text = f"{icon}  \n  {label}"
+            if st.button(btn_text, key=label):
                 navigate_to(target)
-            st.write("") # Memberi jarak
+            st.write("") # Spasi bawah
 
 elif st.session_state.current_page == "Monitoring Asset":
     st.title("🏢 Monitoring Asset")
