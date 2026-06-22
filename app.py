@@ -16,7 +16,7 @@ if "active_menu" not in st.session_state:
 SPREADSHEET_ID = "1hIeT51_SVdNrz62s93zpZNyqepBMdNCa-mDRH-wVOIw"
 
 # Fungsi pembacaan data publik bypass yang aman dari pemblokiran DNS
-@st.cache_data(ttl=30) # Refresh otomatis setiap 30 detik
+@st.cache_data(ttl=60) # Cache otomatis kedaluwarsa setiap 60 detik
 def ambil_data_sheet(nama_sheet):
     try:
         sheet_aman = nama_sheet.replace(" ", "%20")
@@ -27,9 +27,10 @@ def ambil_data_sheet(nama_sheet):
         return pd.DataFrame()
 
 # ==========================================
-# 2. NAVIGASI ATAS (8 MENU PRESISI & INSTAN)
+# 2. NAVIGASI ATAS & TOMBOL REFRESH INSTAN
 # ==========================================
-col1, col2, col3, col4, col5, col6, col7, col8 = st.columns(8)
+# Membagi kolom menjadi 9 bagian (8 untuk menu, 1 untuk tombol refresh)
+col1, col2, col3, col4, col5, col6, col7, col8, col_ref = st.columns([1, 1, 1, 1, 1, 1, 1, 1, 1.2])
 
 with col1:
     if st.button("💰\n\nVARCOST", use_container_width=True, key="btn_varcost"):
@@ -64,6 +65,13 @@ with col8:
         st.session_state.active_menu = "MONITORING_MBP"
         st.rerun()
 
+# 🔄 TOMBOL UTAMA REFRESH ALL DATA
+with col_ref:
+    if st.button("🔄\n\nREFRESH DATA", use_container_width=True, key="btn_refresh_all", type="primary"):
+        st.cache_data.clear() # Menghapus seluruh cache memori Streamlit seketika
+        st.toast("Memperbarui seluruh data langsung dari Google Sheets...", icon="🔄")
+        st.rerun()
+
 st.markdown("---")
 
 # ==========================================
@@ -87,13 +95,8 @@ def halaman_varcost():
     df_sva = ambil_data_sheet("data SVA")
 
     if not df_sva.empty:
-        # Pemetaan berdasarkan posisi indeks kolom (A=0, B=1, C=2, D=3, E=4, F=5, G=6, ..., T=19)
-        # Kolom F (Revenue) -> indeks 5
-        # Kolom G (Bulan)   -> indeks 6
-        # Kolom T (Net Income) -> indeks 19
-        
         try:
-            # Mengambil nama kolom asli berdasarkan urutan alfabet di spreadsheet Anda
+            # Mengambil nama kolom asli berdasarkan urutan alfabet di spreadsheet Anda (F=5, G=6, T=19)
             nama_col_revenue = df_sva.columns[5]   # Kolom F
             nama_col_bulan = df_sva.columns[6]     # Kolom G
             nama_col_income = df_sva.columns[19]   # Kolom T
@@ -133,7 +136,7 @@ def halaman_varcost():
     if not df_varcost.empty:
         st.dataframe(df_varcost, use_container_width=True, hide_index=True)
     else:
-        st.warning("Data tabel 'VARCOST' kosong atau sedang memuat.")
+        st.warning("Data tabel 'VARCOST' kosong atau sedang memuat. Coba klik tombol **REFRESH DATA** di pojok kanan atas.")
 
 # --- MENU 2: TAB DATA PM ---
 def halaman_data_pm():
