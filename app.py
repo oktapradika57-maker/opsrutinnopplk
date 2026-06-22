@@ -150,8 +150,8 @@ def halaman_varcost():
     st.markdown("---")
 
     # Menampilkan Tabel Utama 'VARCOST'
-    st.subheader("📋 Data Sheet Riil: VARCOST")
-    df_varcost = ambil_data_sheet("VARCOST")
+    st.subheader("📋 Data Sheet Riil: data SVA")
+    df_varcost = ambil_data_sheet("data SVA")
     if not df_varcost.empty:
         st.dataframe(df_varcost, use_container_width=True, hide_index=True)
     else:
