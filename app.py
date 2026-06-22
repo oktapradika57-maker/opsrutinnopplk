@@ -2,7 +2,7 @@ import streamlit as st
 
 st.set_page_config(page_title="Dashboard KUT", layout="wide")
 
-# --- CSS KARTU DIBUAT KOTAKNYA SAMA ---
+# --- CSS KARTU DIBUAT LEBAR KOTAKNYA SAMA ---
 st.markdown("""
     <style>
     .grid-wrapper {
