@@ -51,6 +51,7 @@ with col1:
     if st.button("💰\n\nVARCOST", use_container_width=True, key="btn_varcost"):
         st.session_state.active_menu = "VARCOST"
         st.session_state.play_sound = True
+        st.grid = None
         st.rerun()
 with col2:
     if st.button("🛠️\n\nDATA PM", use_container_width=True, key="btn_pm"):
@@ -168,7 +169,6 @@ def halaman_varcost():
         st.info("💡 Grafik dan perhitungan finansial akan muncul setelah data 'data SVA' berhasil ditarik.")
 
     st.markdown("---")
-
     st.subheader("📋 Data Sheet Riil: VARCOST")
     df_varcost = ambil_data_sheet("VARCOST")
     if not df_varcost.empty:
@@ -176,62 +176,29 @@ def halaman_varcost():
     else:
         st.warning("Data tabel 'VARCOST' kosong atau sedang memuat. Klik tombol **REFRESH DATA** di pojok kanan atas.")
 
-def halaman_data_pm():
-    st.title("🛠️ Preventive Maintenance Log (data PM)")
-    df_pm = ambil_data_sheet("data PM")
-    if not df_pm.empty:
-        st.dataframe(df_pm, use_container_width=True, hide_index=True)
+# --- FUNGSI HALAMAN LIVE DENGAN FORMULA RAPI ---
+def tampilkan_halaman_standar(judul_page, nama_tab_sheet):
+    st.title(judul_page)
+    df_data = ambil_data_sheet(nama_tab_sheet)
+    if not df_data.empty:
+        st.dataframe(df_data, use_container_width=True, hide_index=True)
     else:
-        st.info("Tab 'data PM' kosong.")
-
-def halaman_data_project():
-    st.title("🚀 Network Rollout Progress (data Project)")
-    df_project = ambil_data_sheet("data Project")
-    if not df_project.empty:
-        st.dataframe(df_project, use_container_width=True, hide_index=True)
-    else:
-        st.info("Tab 'data Project' Team Kosong.")
-
-def halaman_data_asset():
-    st.title("🏢 Asset Management Inventory (data Asset)")
-    df_asset = ambil_data_sheet("data Asset")
-    if not df_asset.empty:
-        st.dataframe(df_asset, use_container_width=True, hide_index=True)
-    else:
-        st.info("Tab 'data Asset' kosong.")
-
-def halaman_data_kpi():
-    st.title("📈 Network Performance Indicator (data KPI)")
-    df_kpi = ambil_data_sheet("data KPI")
-    if not df_kpi.empty:
-        st.dataframe(df_kpi, use_container_width=True, hide_index=True)
-    else:
-        st.info("Tab 'data KPI' kosong.")
-
-def halaman_data_operational():
-    st.title("⚙️ Network Operations Data (data Operational)")
-    df_ops = ambil_data_sheet("data Operational")
-    if not df_ops.empty:
-        st.dataframe(df_ops, use_container_width=True, hide_index=True)
-    else:
-        st.info("Tab 'data Operational' kosong.")
-
-def halaman_data_pjb():
-    st.title("⏳ PJB Aging Log (data PJB aging)")
-    df_pjb = ambil_data_sheet("data PJB aging")
-    if not df_pjb.empty:
-        st.dataframe(df_pjb, use_container_width=True, hide_index=True)
-    else:
-        st.info("Tab 'data PJB aging' kosong.")
-
-def halaman_monitoring_mbp():
-    st.title("📡 Monitoring MBP & Progress Mateline Management")
-    st.info("Struktur penampung siap pakai untuk modul tambahan.")
+        st.info(f"Tab '{nama_tab_sheet}' kosong atau sedang menyinkronkan data.")
 
 # ==========================================
-# 4. DICTIONARY ROUTER (KEBAL ERROR SPASI)
+# 4. DICTIONARY MAPPING ROUTER (ANTI-CRASH)
 # ==========================================
 peta_halaman = {
     "VARCOST": halaman_varcost,
-    "DATA_PM": halaman_data_pm,
-    "DATA_PROJECT": halaman_data_project,
+    "DATA_PM": lambda: tampilkan_halaman_standar("🛠️ Preventive Maintenance Log (data PM)", "data PM"),
+    "DATA_PROJECT": lambda: tampilkan_halaman_standar("🚀 Network Rollout Progress (data Project)", "data Project"),
+    "DATA_ASSET": lambda: tampilkan_halaman_standar("🏢 Asset Management Inventory (data Asset)", "data Asset"),
+    "DATA_KPI": lambda: tampilkan_halaman_standar("📈 Network Performance Indicator (data KPI)", "data KPI"),
+    "DATA_OPERATIONAL": lambda: tampilkan_halaman_standar("⚙️ Network Operations Data (data Operational)", "data Operational"),
+    "DATA_PJB": lambda: tampilkan_halaman_standar("⏳ PJB Aging Log (data PJB aging)", "data PJB aging"),
+    "MONITORING_MBP": lambda: st.info("📡 Wadah monitoring tambahan siap pakai.")
+}
+
+# Eksekusi aman tanpa percabangan if/elif menggantung
+if st.session_state.active_menu in peta_halaman:
+    peta_halaman[st.session_state.active_menu]()
