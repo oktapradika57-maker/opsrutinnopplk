@@ -1,37 +1,34 @@
 import streamlit as st
 
-st.set_page_config(page_title="Corporate Dashboard", layout="wide")
+st.set_page_config(page_title="Dashboard KUT", layout="wide")
 
+# --- CSS CARD DESIGN ---
 st.markdown("""
     <style>
-    .grid-container {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 30px;
-        padding: 20px;
+    /* Styling tombol agar menjadi Kartu 3D Besar */
+    div.stButton > button {
+        width: 100% !important;
+        height: 250px !important; /* Ukuran lebih besar */
+        border-radius: 25px !important;
+        border: none !important;
+        background: linear-gradient(145deg, #2d303e, #262730) !important;
+        color: white !important;
+        font-size: 22px !important;
+        font-weight: 700 !important;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.3) !important;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+        align-items: center !important;
     }
-    .card-3d {
-        background: linear-gradient(145deg, #2d303e, #262730);
-        height: 200px;
-        border-radius: 20px;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        text-decoration: none;
-        color: white;
-        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        border: 1px solid rgba(255,255,255,0.1);
-        /* Efek 3D */
-        box-shadow: 0 10px 20px rgba(0,0,0,0.3), inset 0 2px 2px rgba(255,255,255,0.1);
+    div.stButton > button:hover {
+        transform: translateY(-15px) scale(1.05) !important;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.5) !important;
+        background: linear-gradient(145deg, #3d4156, #353748) !important;
+        border: 1px solid #6c63ff !important;
     }
-    .card-3d:hover {
-        transform: translateY(-15px) scale(1.05);
-        box-shadow: 0 20px 40px rgba(0,0,0,0.5);
-        border: 1px solid #6c63ff;
-    }
-    .icon-box { font-size: 50px; margin-bottom: 15px; }
-    .label-box { font-size: 18px; font-weight: 700; letter-spacing: 1px; }
+    .big-icon { font-size: 80px !important; margin-bottom: 20px; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -43,7 +40,7 @@ if 'current_page' not in st.session_state: st.session_state.current_page = "Hala
 
 if st.session_state.current_page == "Halaman Depan":
     st.title("✨ Dashboard Kinarya Utama Teknik")
-    st.markdown("---")
+    st.markdown("<br>", unsafe_allow_html=True)
     
     menus = [
         ("💰", "Varcost", "Monitoring Varcost"),
@@ -54,11 +51,23 @@ if st.session_state.current_page == "Halaman Depan":
         ("⚙️", "Operational", "Monitoring Operational")
     ]
     
-    st.markdown('<div class="grid-container">', unsafe_allow_html=True)
-    for icon, label, target in menus:
-        # Menggunakan st.button transparan di atas div 3D
-        if st.button(f"{icon}\n{label}", key=label):
-            navigate_to(target)
-    st.markdown('</div>', unsafe_allow_html=True)
+    cols = st.columns(3)
+    for i, (icon, label, target) in enumerate(menus):
+        with cols[i % 3]:
+            # Tombol langsung menjalankan navigasi tanpa penghalang
+            if st.button(f"<div class='big-icon'>{icon}</div>{label}", key=label):
+                navigate_to(target)
+    
+elif st.session_state.current_page == "Monitoring Asset":
+    st.title("🏢 Monitoring Asset")
+    if st.button("⬅ Kembali ke Dashboard"): navigate_to("Halaman Depan")
+    st.markdown("---")
+    tab1, tab2 = st.tabs(["📦 Asset KUT", "🏗️ Asset Rental"])
+    with tab1: st.write("Data Asset KUT akan tampil di sini.")
+    with tab2: st.write("Data Asset Rental akan tampil di sini.")
 
-# ... sisa logika navigasi halaman sama seperti sebelumnya ...
+else:
+    st.title(f"📊 {st.session_state.current_page}")
+    if st.button("⬅ Kembali ke Dashboard"): navigate_to("Halaman Depan")
+    st.markdown("---")
+    st.write(f"Konten detail untuk {st.session_state.current_page} sedang dimuat...")
