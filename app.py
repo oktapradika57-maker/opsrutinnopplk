@@ -15,7 +15,6 @@ if "active_menu" not in st.session_state:
 # ==========================================
 # 2. NAVIGASI ATAS (8 MENU PRESISI & INSTAN)
 # ==========================================
-# Membagi layar menjadi 8 kolom simetris yang sama rata ukurannya
 col1, col2, col3, col4, col5, col6, col7, col8 = st.columns(8)
 
 with col1:
@@ -70,22 +69,22 @@ def halaman_varcost():
     st.caption("Memantau fluktuasi biaya operasional jaringan, interkoneksi, serta kinerja finansial korporat.")
     st.write("")
 
-    # BARIS BARU: Dropdown Analisa Finansial (Revenue & Income)
+    # Dropdown Analisa Finansial (Revenue & Income)
     st.subheader("📊 Corporate Financial Analysis")
     opsi_analisa = st.selectbox(
         "Pilih Metrik Analisis Finansial:",
         ["Revenue Analysis (Pendapatan)", "Net Income Analysis (Laba Bersih)"]
     )
 
-    # Logika Tampilan Berdasarkan Dropdown
+    # Logika Tampilan Berdasarkan Dropdown (SUDAH DIPERBAIKI)
     if opsi_analisa == "Revenue Analysis (Pendapatan)":
-        r1, r2 = st.columns([2, 1])
+        r1, r2 = st.columns(2)
         with r1:
             st.info("📈 **Tren Pendapatan Korporat (Berdasarkan Lini Bisnis)**")
             data_rev = pd.DataFrame({
-                "Mobile Data (Cellular)":,
-                "FTTH & Broadband (Indihome/Home)":,
-                "Enterprise & Cloud Solution": [310, 330, 320, 350, 380, 410]
+                "Mobile Data (Cellular)": [7.2, 7.3, 7.5, 7.4, 7.6, 7.8],
+                "FTTH & Broadband": [4.1, 4.2, 4.3, 4.3, 4.5, 4.6],
+                "Enterprise Solution": [1.5, 1.6, 1.6, 1.7, 1.7, 1.8]
             }, index=["Jan", "Feb", "Mar", "Apr", "May", "Jun"])
             st.line_chart(data_rev)
         with r2:
@@ -94,11 +93,11 @@ def halaman_varcost():
             st.caption("**Kontributor Terbesar:** Layanan Data Seluler tetap mendominasi pendapatan sebesar 52%.")
 
     elif opsi_analisa == "Net Income Analysis (Laba Bersih)":
-        i1, i2 = st.columns([2, 1])
+        i1, i2 = st.columns(2)
         with i1:
             st.success("💰 **Tren Laba Bersih Perusahaan (2026)**")
             data_inc = pd.DataFrame({
-                "Net Income (Miliar IDR)": [120, 145, 138, 160, 175, 198]
+                "Net Income (Miliar IDR)": [1800, 1850, 1920, 1890, 1980, 2100]
             }, index=["Jan", "Feb", "Mar", "Apr", "May", "Jun"])
             st.bar_chart(data_inc)
         with i2:
@@ -130,7 +129,7 @@ def halaman_varcost():
             {
                 "IP Transit":,
                 "BTS Fuel & Power":,
-                "Fiber Lease Leased Lines": [290, 295, 300, 310, 312, 315]
+                "Fiber Lease Lines": [305, 308, 310, 312, 314, 315]
             },
             index=["Jan", "Feb", "Mar", "Apr", "May", "Jun"]
         )
@@ -165,18 +164,16 @@ def halaman_operational():
     st.title("⚙️ Network Operations Center (NOC)")
     st.write("Operasional Lapangan: Monitoring Traffic Load, Manajemen Tiket Gangguan, dan Utilisasi Kapasitas Server.")
 
-# --- HALAMAN BARU YANG DITAMBAHKAN ---
+# --- HALAMAN MONITORING MBP ---
 def halaman_monitoring_mbp():
     st.title("📡 Monitoring MBP (Mobile Backup Power)")
     st.caption("Memantau status ketersediaan dan lokasi genset mobile / baterai backup cadangan saat terjadi pemadaman listrik PLN di site BTS.")
     
-    # Grid Status MBP
     s1, s2, s3 = st.columns(3)
     s1.metric("Total Unit MBP Aktif", "142 Unit", "Beroperasi")
     s2.metric("Unit On Standby / Ready", "58 Unit", "Siaga")
     s3.metric("Critical Site (No Backup)", "3 Site", "⚠️ Butuh Deployment", delta_color="inverse")
     
-    # Tabel Data Realtime MBP
     st.subheader("📋 Realtime Deployment List MBP")
     mbp_data = pd.DataFrame({
         "ID Unit MBP": ["MBP-REG1-042", "MBP-REG1-089", "MBP-REG2-011", "MBP-REG3-102"],
@@ -187,13 +184,12 @@ def halaman_monitoring_mbp():
     })
     st.dataframe(mbp_data, use_container_width=True, hide_index=True)
 
+# --- HALAMAN PROGRESS MATELINE ---
 def halaman_progress_mateline():
     st.title("📋 Progress Mateline & Material Management")
     st.caption("Pelacakan rantai pasok material infrastruktur jaringan kabel optik dan komponen menara telekomunikasi.")
     
-    # Contoh progress bar pengadaan material
     st.subheader("🚧 Material Procurement Progress")
-    
     st.write("Kabel Fiber Optik Core 48 (Kebutuhan Rollout FTTH Jabar)")
     st.progress(0.85, text="85% Berhasil Didistribusikan ke Gudang Regional")
     
@@ -201,7 +197,7 @@ def halaman_progress_mateline():
     st.progress(0.60, text="60% Proses Custom Clearance di Pelabuhan")
     
     st.write("Tiang Pancang / Pole Antena 9 Meter")
-    st.progress(0.35, text="35% Produksi di Pabrik Vendor Vendor Lokal")
+    st.progress(0.35, text="35% Produksi di Pabrik Vendor Lokal")
 
 # ==========================================
 # 4. ROUTER EKSEKUSI HALAMAN
