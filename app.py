@@ -16,7 +16,7 @@ if "active_menu" not in st.session_state:
 if "play_sound" not in st.session_state:
     st.session_state.play_sound = False
 
-# ID Spreadsheet Utama Anda (Dihasilkan dari link publik Database Reg Kalimantan Anda)
+# ID Spreadsheet Utama Anda (Database Reg Kalimantan)
 SPREADSHEET_ID = "1hIeT51_SVdNrz62s93zpZNyqepBMdNCa-mDRH-wVOIw"
 
 # 🔊 FUNGSI EFEK SUARA KLIK (Audio HTML JavaScript)
@@ -31,15 +31,17 @@ if st.session_state.play_sound:
     putar_suara_klik()
     st.session_state.play_sound = False
 
-# 🌐 FUNGSI UTAMA: Membaca Google Sheet via Direct Web Export
-@st.cache_data(ttl=5) # Segarkan data otomatis dalam 5 detik
+# 🌐 FUNGSI UTAMA: Jalur Ekspor Standar Google (Jauh lebih stabil & Anti-Block)
+@st.cache_data(ttl=2) # Cache dipangkas sangat tipis agar data langsung sinkron
 def ambil_data_sheet(nama_sheet):
     try:
         sheet_aman = urllib.parse.quote(nama_sheet)
-        url_csv = f"https://google.com{SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet={sheet_aman}"
+        # Beralih menggunakan format /export?format=csv yang wajib direspons oleh server Google
+        url_csv = f"https://google.com{SPREADSHEET_ID}/export?format=csv&sheet={sheet_aman}"
         df = pd.read_csv(url_csv)
         return df
     except Exception as e:
+        st.sidebar.error(f"Gagal memuat sheet '{nama_sheet}': {e}")
         return pd.DataFrame()
 
 # ==========================================
@@ -117,10 +119,13 @@ def halaman_varcost():
 
     if not df_sva.empty:
         try:
-            # 🛠️ PERBAIKAN ABSOLUT: Mengambil string nama kolom fisik berdasarkan indeks angka koordinat yang valid
-            col_revenue = df_sva.columns[5]   # Ambil nama asli dari fisik Kolom F
-            col_bulan = df_sva.columns[6]     # Ambil nama asli dari fisik Kolom G
-            col_income = df_sva.columns[19]   # Ambil nama asli dari fisik Kolom T
+            # Mengunci nama kolom berdasarkan urutan fisik posisi kolom (F=5, G=6, T=19)
+            col_revenue = df_sva.columns[5]   # Kolom F
+            col_bulan = df_sva.columns[6]     # Kolom G
+            col_income = df_sva.columns[19]   # Kolom T
+
+            # Membersihkan spasi pada data kolom agar tidak merusak visualisasi grafis
+            df_sva[col_bulan] = df_sva[col_bulan].astype(str).str.strip()
 
             # PROSES DATA: Pembersihan & Konversi Tipe Data Teks ke Angka Matematika
             df_sva[col_revenue] = df_sva[col_revenue].astype(str).str.replace(r'[^\d,-]', '', regex=True).str.replace(',', '.')
@@ -132,7 +137,9 @@ def halaman_varcost():
             # 📈 TAMPILAN 1: REVENUE ANALYSIS
             if opsi_analisa == "Revenue Analysis (Pendapatan)":
                 st.info(f"📈 **Tren Revenue Bulanan (Sumber: data SVA - Kolom {col_revenue})**")
+                # Drop baris yang bulannya kosong agar grafik rapi
                 df_chart = df_sva[[col_bulan, col_revenue]].dropna()
+                df_chart = df_chart[df_chart[col_bulan] != "nan"]
                 st.line_chart(df_chart.set_index(col_bulan))
                 
                 # Menghitung Jumlah Akumulasi Total Seluruh Baris Revenue
@@ -155,6 +162,7 @@ def halaman_varcost():
             elif opsi_analisa == "Net Income Analysis (Laba Bersih)":
                 st.success(f"💰 **Tren Net Income Bulanan (Sumber: data SVA - Kolom {col_income})**")
                 df_chart = df_sva[[col_bulan, col_income]].dropna()
+                df_chart = df_chart[df_chart[col_bulan] != "nan"]
                 st.bar_chart(df_chart.set_index(col_bulan))
                 
                 # Menghitung Jumlah Akumulasi Total Seluruh Baris Net Income
@@ -186,7 +194,7 @@ def halaman_varcost():
     if not df_varcost.empty:
         st.dataframe(df_varcost, use_container_width=True, hide_index=True)
     else:
-        st.warning("Data tabel 'VARCOST' kosong atau sedang memuat. Coba klik tombol **REFRESH DATA** di pojok kanan atas.")
+        st.warning("Data tabel 'VARCOST' kosong atau sedang memuat. Klik tombol **REFRESH DATA** di pojok kanan atas.")
 
 # --- HALAMAN LAINNYA ---
 def halaman_data_pm():
@@ -227,15 +235,3 @@ def halaman_data_operational():
     if not df_ops.empty:
         st.dataframe(df_ops, use_container_width=True, hide_index=True)
     else:
-        st.info("Tab 'data Operational' kosong.")
-
-def halaman_data_pjb():
-    st.title("⏳ PJB Aging Log (data PJB aging)")
-    df_pjb = ambil_data_sheet("data PJB aging")
-    if not df_pjb.empty:
-        st.dataframe(df_pjb, use_container_width=True, hide_index=True)
-    else:
-        st.info("Tab 'data PJB aging' kosong.")
-
-def halaman_monitoring_mbp():
-    st.title("📡 Monitoring MBP & Progress Mateline Management")
