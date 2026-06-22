@@ -36,7 +36,6 @@ if st.session_state.play_sound:
 def ambil_data_sheet(nama_sheet):
     try:
         sheet_aman = urllib.parse.quote(nama_sheet)
-        # Beralih menggunakan format /export?format=csv&sheet= (Format unduhan paksa paling stabil)
         url_csv = f"https://google.com{SPREADSHEET_ID}/export?format=csv&sheet={sheet_aman}"
         df = pd.read_csv(url_csv)
         return df
@@ -159,7 +158,7 @@ def halaman_varcost():
                 
                 m1, m2 = st.columns(2)
                 with m1:
-                    st.metric(label="💵 TOTAL SELURUH NET INCOME", value=f"{total_akumulasi_income:,.0f}".replace(",", ".")safe)
+                    st.metric(label="💵 TOTAL SELURUH NET INCOME", value=f"{total_akumulasi_income:,.0f}".replace(",", "."))
                 with m2:
                     val_inc_terakhir = df_sva[col_income].iloc[-1]
                     st.metric(label="📅 Net Income Periode Terakhir", value=f"{val_inc_terakhir:,.0f}".replace(",", "."))
@@ -194,7 +193,7 @@ def halaman_data_project():
     if not df_project.empty:
         st.dataframe(df_project, use_container_width=True, hide_index=True)
     else:
-        st.info("Tab 'data Project' kosong.")
+        st.info("Tab 'data Project' Team Kosong.")
 
 def halaman_data_asset():
     st.title("🏢 Asset Management Inventory (data Asset)")
@@ -237,3 +236,6 @@ def halaman_monitoring_mbp():
 # ==========================================
 if st.session_state.active_menu == "VARCOST":
     halaman_varcost()
+elif st.session_state.active_menu == "DATA_PM":
+    halaman_data_pm()
+elif st.session_state.active_menu == "DATA_PROJECT":
