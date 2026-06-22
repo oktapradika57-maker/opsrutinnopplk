@@ -31,7 +31,7 @@ if st.session_state.play_sound:
     putar_suara_klik()
     st.session_state.play_sound = False
 
-# 🌐 FUNGSI UTAMA: Jalur Ekspor CSV Langsung yang Terbukti Paling Kuat Menembus Google Sheets
+# 🌐 FUNGSI UTAMA: Jalur Ekspor CSV Standar Google (Paling Stabil)
 @st.cache_data(ttl=2)
 def ambil_data_sheet(nama_sheet):
     try:
@@ -51,6 +51,7 @@ with col1:
     if st.button("💰\n\nVARCOST", use_container_width=True, key="btn_varcost"):
         st.session_state.active_menu = "VARCOST"
         st.session_state.play_sound = True
+        st.grid = None
         st.rerun()
 with col2:
     if st.button("🛠️\n\nDATA PM", use_container_width=True, key="btn_pm"):
@@ -111,51 +112,62 @@ def halaman_varcost():
         ["Revenue Analysis (Pendapatan)", "Net Income Analysis (Laba Bersih)"]
     )
 
-    df_sva = ambil_data_sheet("data SVA")
+    # Memuat data live dari sheet 'data SVA'
+    df_sva_raw = ambil_data_sheet("data SVA")
 
-    if not df_sva.empty:
+    if not df_sva_raw.empty:
         try:
-            col_revenue = df_sva.columns[5]   # Fisik Kolom F
-            col_bulan = df_sva.columns[6]     # Fisik Kolom G
-            col_income = df_sva.columns[19]   # Fisik Kolom T
+            # Buat salinan data dan seragamkan nama kolom menjadi huruf kecil serta hapus spasi liar
+            df_sva = df_sva_raw.copy()
+            df_sva.columns = df_sva.columns.str.strip().str.lower()
 
-            df_sva[col_bulan] = df_sva[col_bulan].astype(str).str.strip()
+            # 🛠️ SISTEM PENCARIAN KOLOM OTOMATIS BERDASARKAN TEKS (ANTI-SALAH URUTAN)
+            col_bulan = next((c for c in df_sva.columns if "bulan" in c), None)
+            col_revenue = next((c for c in df_sva.columns if "revenue" in c), None)
+            col_income = next((c for c in df_sva.columns if "income" in c or "laba" in c), None)
 
-            df_sva[col_revenue] = df_sva[col_revenue].astype(str).str.replace(r'[^\d,-]', '', regex=True).str.replace(',', '.')
-            df_sva[col_revenue] = pd.to_numeric(df_sva[col_revenue], errors='coerce').fillna(0)
+            if col_bulan and col_revenue and col_income:
+                # Pembersihan data teks mata uang menjadi angka matematika desimal
+                df_sva[col_revenue] = df_sva[col_revenue].astype(str).str.replace(r'[^\d,-]', '', regex=True).str.replace(',', '.')
+                df_sva[col_revenue] = pd.to_numeric(df_sva[col_revenue], errors='coerce').fillna(0)
 
-            df_sva[col_income] = df_sva[col_income].astype(str).str.replace(r'[^\d,-]', '', regex=True).str.replace(',', '.')
-            df_sva[col_income] = pd.to_numeric(df_sva[col_income], errors='coerce').fillna(0)
+                df_sva[col_income] = df_sva[col_income].astype(str).str.replace(r'[^\d,-]', '', regex=True).str.replace(',', '.')
+                df_sva[col_income] = pd.to_numeric(df_sva[col_income], errors='coerce').fillna(0)
 
-            if opsi_analisa == "Revenue Analysis (Pendapatan)":
-                st.info(f"📈 **Tren Revenue Bulanan (Sumber: data SVA - Kolom {col_revenue})**")
-                df_chart = df_sva[[col_bulan, col_revenue]].dropna()
-                df_chart = df_chart[df_chart[col_bulan] != "nan"]
-                st.line_chart(df_chart.set_index(col_bulan))
-                
-                total_akumulasi_revenue = df_sva[col_revenue].sum()
-                
-                m1, m2 = st.columns(2)
-                with m1:
-                    st.metric(label="💰 TOTAL SELURUH REVENUE", value=f"{total_akumulasi_revenue:,.0f}".replace(",", "."))
-                with m2:
-                    val_rev_terakhir = df_sva[col_revenue].iloc[-1]
-                    st.metric(label="📅 Revenue Periode Terakhir", value=f"{val_rev_terakhir:,.0f}".replace(",", "."))
+                # 📈 TAMPILAN 1: REVENUE ANALYSIS
+                if opsi_analisa == "Revenue Analysis (Pendapatan)":
+                    st.info(f"📈 **Tren Revenue Bulanan (Sumber otomatis terdeteksi: '{col_revenue}')**")
+                    df_chart = df_sva[[col_bulan, col_revenue]].dropna()
+                    df_chart = df_chart[df_chart[col_bulan].astype(str).str.lower() != "nan"]
+                    st.line_chart(df_chart.set_index(col_bulan))
+                    
+                    total_akumulasi_revenue = df_sva[col_revenue].sum()
+                    
+                    m1, m2 = st.columns(2)
+                    with m1:
+                        st.metric(label="💰 TOTAL SELURUH REVENUE", value=f"{total_akumulasi_revenue:,.0f}".replace(",", "."))
+                    with m2:
+                        val_rev_terakhir = df_sva[col_revenue].iloc[-1]
+                        st.metric(label="📅 Revenue Periode Terakhir", value=f"{val_rev_terakhir:,.0f}".replace(",", "."))
 
-            elif opsi_analisa == "Net Income Analysis (Laba Bersih)":
-                st.success(f"💰 **Tren Net Income Bulanan (Sumber: data SVA - Kolom {col_income})**")
-                df_chart = df_sva[[col_bulan, col_income]].dropna()
-                df_chart = df_chart[df_chart[col_bulan] != "nan"]
-                st.bar_chart(df_chart.set_index(col_bulan))
-                
-                total_akumulasi_income = df_sva[col_income].sum()
-                
-                m1, m2 = st.columns(2)
-                with m1:
-                    st.metric(label="💵 TOTAL SELURUH NET INCOME", value=f"{total_akumulasi_income:,.0f}".replace(",", "."))
-                with m2:
-                    val_inc_terakhir = df_sva[col_income].iloc[-1]
-                    st.metric(label="📅 Net Income Periode Terakhir", value=f"{val_inc_terakhir:,.0f}".replace(",", "."))
+                # 📊 TAMPILAN 2: NET INCOME ANALYSIS
+                elif opsi_analisa == "Net Income Analysis (Laba Bersih)":
+                    st.success(f"💰 **Tren Net Income Bulanan (Sumber otomatis terdeteksi: '{col_income}')**")
+                    df_chart = df_sva[[col_bulan, col_income]].dropna()
+                    df_chart = df_chart[df_chart[col_bulan].astype(str).str.lower() != "nan"]
+                    st.bar_chart(df_chart.set_index(col_bulan))
+                    
+                    total_akumulasi_income = df_sva[col_income].sum()
+                    
+                    m1, m2 = st.columns(2)
+                    with m1:
+                        st.metric(label="💵 TOTAL SELURUH NET INCOME", value=f"{total_akumulasi_income:,.0f}".replace(",", "."))
+                    with m2:
+                        val_inc_terakhir = df_sva[col_income].iloc[-1]
+                        st.metric(label="📅 Net Income Periode Terakhir", value=f"{val_inc_terakhir:,.0f}".replace(",", "."))
+            else:
+                st.warning("⚠️ Kolom finansial tidak lengkap.")
+                st.info(f"Nama kolom terdeteksi pada 'data SVA': {list(df_sva_raw.columns)}")
                 
         except Exception as err:
             st.error(f"Gagal memproses perhitungan angka pada tab 'data SVA': {err}")
@@ -164,6 +176,7 @@ def halaman_varcost():
 
     st.markdown("---")
 
+    # Menampilkan Tabel Utama 'VARCOST' asli di bagian bawah
     st.subheader("📋 Data Sheet Riil: VARCOST")
     df_varcost = ambil_data_sheet("VARCOST")
     if not df_varcost.empty:
@@ -215,29 +228,3 @@ def halaman_data_pjb():
     st.title("⏳ PJB Aging Log (data PJB aging)")
     df_pjb = ambil_data_sheet("data PJB aging")
     if not df_pjb.empty:
-        st.dataframe(df_pjb, use_container_width=True, hide_index=True)
-    else:
-        st.info("Tab 'data PJB aging' kosong.")
-
-def halaman_monitoring_mbp():
-    st.title("📡 Monitoring MBP & Progress Mateline Management")
-    st.info("Struktur penampung siap pakai untuk modul tambahan.")
-
-# ==========================================
-# 4. DICTIONARY ROUTER (ANTI-ERROR SPASI)
-# ==========================================
-# Struktur peta fungsi halaman untuk menjamin kepresisian eksekusi
-peta_halaman = {
-    "VARCOST": halaman_varcost,
-    "DATA_PM": halaman_data_pm,
-    "DATA_PROJECT": halaman_data_project,
-    "DATA_ASSET": halaman_data_asset,
-    "DATA_KPI": halaman_data_kpi,
-    "DATA_OPERATIONAL": halaman_data_operational,
-    "DATA_PJB": halaman_data_pjb,
-    "MONITORING_MBP": halaman_monitoring_mbp
-}
-
-# Jalankan fungsi halaman berdasarkan menu aktif
-if st.session_state.active_menu in peta_halaman:
-    peta_halaman[st.session_state.active_menu]()
