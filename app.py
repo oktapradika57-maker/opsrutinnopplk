@@ -36,12 +36,10 @@ if st.session_state.play_sound:
 def ambil_data_sheet(nama_sheet):
     try:
         sheet_aman = urllib.parse.quote(nama_sheet)
-        # Beralih menggunakan format /export?format=csv yang wajib direspons oleh server Google
         url_csv = f"https://google.com{SPREADSHEET_ID}/export?format=csv&sheet={sheet_aman}"
         df = pd.read_csv(url_csv)
         return df
     except Exception as e:
-        st.sidebar.error(f"Gagal memuat sheet '{nama_sheet}': {e}")
         return pd.DataFrame()
 
 # ==========================================
@@ -119,10 +117,13 @@ def halaman_varcost():
 
     if not df_sva.empty:
         try:
-            # Mengunci nama kolom berdasarkan urutan fisik posisi kolom (F=5, G=6, T=19)
-            col_revenue = df_sva.columns[5]   # Kolom F
-            col_bulan = df_sva.columns[6]     # Kolom G
-            col_income = df_sva.columns[19]   # Kolom T
+            # 🛠️ KUNCI INDEKS MATEMATIS ASLI:
+            # Kolom F (Revenue) ke-6 = Indeks 5
+            # Kolom G (Bulan) ke-7 = Indeks 6
+            # Kolom T (Net Income) ke-20 = Indeks 19
+            col_revenue = df_sva.columns[5]   # Fisik Kolom F
+            col_bulan = df_sva.columns[6]     # Fisik Kolom G
+            col_income = df_sva.columns[19]   # Fisik Kolom T
 
             # Membersihkan spasi pada data kolom agar tidak merusak visualisasi grafis
             df_sva[col_bulan] = df_sva[col_bulan].astype(str).str.strip()
@@ -137,7 +138,6 @@ def halaman_varcost():
             # 📈 TAMPILAN 1: REVENUE ANALYSIS
             if opsi_analisa == "Revenue Analysis (Pendapatan)":
                 st.info(f"📈 **Tren Revenue Bulanan (Sumber: data SVA - Kolom {col_revenue})**")
-                # Drop baris yang bulannya kosong agar grafik rapi
                 df_chart = df_sva[[col_bulan, col_revenue]].dropna()
                 df_chart = df_chart[df_chart[col_bulan] != "nan"]
                 st.line_chart(df_chart.set_index(col_bulan))
@@ -235,3 +235,6 @@ def halaman_data_operational():
     if not df_ops.empty:
         st.dataframe(df_ops, use_container_width=True, hide_index=True)
     else:
+        st.info("Tab 'data Operational' kosong.")
+
+def halaman_data_pjb():
