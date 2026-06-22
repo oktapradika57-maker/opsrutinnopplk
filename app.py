@@ -117,10 +117,7 @@ def halaman_varcost():
 
     if not df_sva.empty:
         try:
-            # 🛠️ KUNCI INDEKS MATEMATIS ASLI:
-            # Kolom F (Revenue) ke-6 = Indeks 5
-            # Kolom G (Bulan) ke-7 = Indeks 6
-            # Kolom T (Net Income) ke-20 = Indeks 19
+            # Mengunci nama kolom berdasarkan urutan fisik posisi kolom (F=5, G=6, T=19)
             col_revenue = df_sva.columns[5]   # Fisik Kolom F
             col_bulan = df_sva.columns[6]     # Fisik Kolom G
             col_income = df_sva.columns[19]   # Fisik Kolom T
@@ -238,3 +235,6 @@ def halaman_data_operational():
         st.info("Tab 'data Operational' kosong.")
 
 def halaman_data_pjb():
+    st.title("⏳ PJB Aging Log (data PJB aging)")
+    df_pjb = ambil_data_sheet("data PJB aging")
+    if not df_pjb.empty:
