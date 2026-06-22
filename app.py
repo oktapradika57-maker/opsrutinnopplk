@@ -2,7 +2,7 @@ import streamlit as st
 
 st.set_page_config(page_title="Dashboard KUT", layout="wide")
 
-# --- CSS PRESISI MENGGUNAKAN GRID ---
+# --- CSS KARTU DIBUAT KOTAKNYA SAMA ---
 st.markdown("""
     <style>
     .grid-wrapper {
