@@ -1,8 +1,7 @@
 import streamlit as st
 import pandas as pd
-import gspread
-from google.oauth2.service_account import Credentials
 import streamlit.components.v1 as components
+import urllib.parse
 
 # 1. Konfigurasi Halaman & Tema Gelap Ops Center
 st.set_page_config(
@@ -17,7 +16,7 @@ if "active_menu" not in st.session_state:
 if "play_sound" not in st.session_state:
     st.session_state.play_sound = False
 
-# ID Spreadsheet Utama Anda (Database Reg Kalimantan)
+# ID Spreadsheet Utama Anda (Dihasilkan dari link Database Reg Kalimantan Anda)
 SPREADSHEET_ID = "1hIeT51_SVdNrz62s93zpZNyqepBMdNCa-mDRH-wVOIw"
 
 # 🔊 FUNGSI EFEK SUARA KLIK
@@ -32,29 +31,16 @@ if st.session_state.play_sound:
     putar_suara_klik()
     st.session_state.play_sound = False
 
-# 🔐 KONEKSI UTAMA API GOOGLE (Menggunakan gspread resmi)
-@st.cache_data(ttl=10) # Data disimpan di memori selama 10 detik agar sinkronisasi instan
+# 🌐 FUNGSI UTAMA: Membaca Google Sheet via Direct Web Export (Anti-Gagal setelah Publish to Web)
+@st.cache_data(ttl=5) # Segarkan data otomatis dalam 5 detik
 def ambil_data_sheet(nama_sheet):
     try:
-        # Menentukan hak akses ruang lingkup API Google Drive dan Sheets
-        scopes = [
-            "https://googleapis.com",
-            "https://googleapis.com"
-        ]
-        # Membaca berkas kunci rahasia yang disimpan sejajar dengan file app.py
-        kredensial = Credentials.from_service_account_file("creds.json", scopes=scopes)
-        klien = gspread.authorize(kredensial)
-        
-        # Membuka spreadsheet berdasarkan ID fisik dan nama tabnya
-        buka_file = klien.open_by_key(SPREADSHEET_ID)
-        lembar_kerja = buka_file.worksheet(nama_sheet)
-        
-        # Mengambil semua rekaman baris data dan mengubahnya menjadi Pandas DataFrame
-        data_rows = lembar_kerja.get_all_records()
-        df = pd.DataFrame(data_rows)
+        sheet_aman = urllib.parse.quote(nama_sheet)
+        # Tautan khusus ekspor visualisasi data engine Google Docs
+        url_csv = f"https://google.com{SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet={sheet_aman}"
+        df = pd.read_csv(url_csv)
         return df
     except Exception as e:
-        st.sidebar.error(f"Gagal memuat API tab '{nama_sheet}': {e}")
         return pd.DataFrame()
 
 # ==========================================
@@ -89,18 +75,18 @@ with col8:
 with col_ref:
     if st.button("🔄\n\nREFRESH DATA", use_container_width=True, key="btn_refresh_all", type="primary"):
         st.cache_data.clear(); st.session_state.play_sound = True
-        st.toast("Memperbarui seluruh data via API Google...", icon="🔄")
+        st.toast("Memperbarui seluruh data dari Google Sheets...", icon="🔄")
         st.rerun()
 
 st.markdown("---")
 
 # ==========================================
-# 3. KONTEN HALAMAN (RESOURCE LIVE GOOGLE API)
+# 3. KONTEN HALAMAN (RESOURCE LIVE)
 # ==========================================
 
 def halaman_varcost():
     st.title("🌐 Telecom Variable Cost Analysis")
-    st.caption("Memantau ringkasan biaya operasional wilayah Kalimantan langsung dari Google Sheets API.")
+    st.caption("Memantau ringkasan biaya operasional wilayah Kalimantan langsung dari Google Sheets.")
     st.write("")
 
     st.subheader("📊 Corporate Financial Dropdown")
@@ -109,32 +95,32 @@ def halaman_varcost():
         ["Revenue Analysis (Pendapatan)", "Net Income Analysis (Laba Bersih)"]
     )
 
-    # Memuat data live aman menggunakan gspread dari sheet 'data SVA'
+    # Memuat data live dari sheet 'data SVA'
     df_sva = ambil_data_sheet("data SVA")
 
     if not df_sva.empty:
         df_sva.columns = df_sva.columns.str.strip()
         try:
-            # Sesuai instruksi Anda: Kolom F (Revenue) ke-5, Kolom G (Bulan) ke-6, Kolom T (Net Income) ke-19
-            col_revenue = df_sva.columns[5]
-            col_bulan = df_sva.columns[6]
-            col_income = df_sva.columns[19]
+            # Menggunakan urutan fisik kolom: F (Revenue)=ke-5, G (Bulan)=ke-6, T (Net Income)=ke-19
+            col_revenue = df_sva.columns
+            col_bulan = df_sva.columns
+            col_income = df_sva.columns
 
             if opsi_analisa == "Revenue Analysis (Pendapatan)":
-                st.info(f"📈 **Tren Revenue Bulanan (Sumber: data SVA - Kolom {col_revenue})**")
+                st.info(f"📈 **Tren Revenue Bulanan (Sumber: data SVA)**")
                 df_chart = df_sva[[col_bulan, col_revenue]].dropna()
                 st.line_chart(df_chart.set_index(col_bulan))
                 st.metric(label="Revenue Periode Terakhir", value=str(df_sva[col_revenue].iloc[-1]))
 
             elif opsi_analisa == "Net Income Analysis (Laba Bersih)":
-                st.success(f"💰 **Tren Net Income Bulanan (Sumber: data SVA - Kolom {col_income})**")
+                st.success(f"💰 **Tren Net Income Bulanan (Sumber: data SVA)**")
                 df_chart = df_sva[[col_bulan, col_income]].dropna()
                 st.bar_chart(df_chart.set_index(col_bulan))
                 st.metric(label="Net Income Periode Terakhir", value=str(df_sva[col_income].iloc[-1]))
         except Exception as err:
-            st.error(f"Gagal memetakan posisi kolom fisik F, G, T pada tab 'data SVA': {err}")
+            st.error(f"Gagal memetakan kolom F, G, T pada 'data SVA': {err}")
     else:
-        st.info("💡 Grafik finansial akan muncul setelah koneksi API Google Sheets 'data SVA' berhasil terhubung.")
+        st.info("💡 Menunggu sinkronisasi grafik finansial dari 'data SVA'. Pastikan langkah 'Publish to Web' sudah diaktifkan.")
 
     st.markdown("---")
 
@@ -144,7 +130,7 @@ def halaman_varcost():
     if not df_varcost.empty:
         st.dataframe(df_varcost, use_container_width=True, hide_index=True)
     else:
-        st.error("Tabel 'VARCOST' gagal dimuat via API. Pastikan file 'creds.json' sudah di-upload ke GitHub Anda.")
+        st.warning("Data tabel 'VARCOST' kosong atau sedang memuat.")
 
 # --- HALAMAN LAINNYA ---
 def halaman_data_pm():
