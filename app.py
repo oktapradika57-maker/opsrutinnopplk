@@ -112,34 +112,28 @@ def halaman_varcost():
         ["Revenue Analysis (Pendapatan)", "Net Income Analysis (Laba Bersih)"]
     )
 
-    # Memuat data live dari sheet 'data SVA'
     df_sva = ambil_data_sheet("data SVA")
 
     if not df_sva.empty:
         try:
-            # Mengunci nama kolom berdasarkan urutan fisik posisi kolom (F=5, G=6, T=19)
             col_revenue = df_sva.columns[5]   # Fisik Kolom F
             col_bulan = df_sva.columns[6]     # Fisik Kolom G
             col_income = df_sva.columns[19]   # Fisik Kolom T
 
-            # Membersihkan spasi pada data kolom agar tidak merusak visualisasi grafis
             df_sva[col_bulan] = df_sva[col_bulan].astype(str).str.strip()
 
-            # PROSES DATA: Pembersihan & Konversi Tipe Data Teks ke Angka Matematika
             df_sva[col_revenue] = df_sva[col_revenue].astype(str).str.replace(r'[^\d,-]', '', regex=True).str.replace(',', '.')
             df_sva[col_revenue] = pd.to_numeric(df_sva[col_revenue], errors='coerce').fillna(0)
 
             df_sva[col_income] = df_sva[col_income].astype(str).str.replace(r'[^\d,-]', '', regex=True).str.replace(',', '.')
             df_sva[col_income] = pd.to_numeric(df_sva[col_income], errors='coerce').fillna(0)
 
-            # 📈 TAMPILAN 1: REVENUE ANALYSIS
             if opsi_analisa == "Revenue Analysis (Pendapatan)":
                 st.info(f"📈 **Tren Revenue Bulanan (Sumber: data SVA - Kolom {col_revenue})**")
                 df_chart = df_sva[[col_bulan, col_revenue]].dropna()
                 df_chart = df_chart[df_chart[col_bulan] != "nan"]
                 st.line_chart(df_chart.set_index(col_bulan))
                 
-                # Menghitung Jumlah Akumulasi Total Seluruh Baris Revenue
                 total_akumulasi_revenue = df_sva[col_revenue].sum()
                 
                 m1, m2 = st.columns(2)
@@ -155,14 +149,12 @@ def halaman_varcost():
                         value=f"{val_rev_terakhir:,.0f}".replace(",", ".")
                     )
 
-            # 📊 TAMPILAN 2: NET INCOME ANALYSIS
             elif opsi_analisa == "Net Income Analysis (Laba Bersih)":
                 st.success(f"💰 **Tren Net Income Bulanan (Sumber: data SVA - Kolom {col_income})**")
                 df_chart = df_sva[[col_bulan, col_income]].dropna()
                 df_chart = df_chart[df_chart[col_bulan] != "nan"]
                 st.bar_chart(df_chart.set_index(col_bulan))
                 
-                # Menghitung Jumlah Akumulasi Total Seluruh Baris Net Income
                 total_akumulasi_income = df_sva[col_income].sum()
                 
                 m1, m2 = st.columns(2)
@@ -185,7 +177,6 @@ def halaman_varcost():
 
     st.markdown("---")
 
-    # Menampilkan Tabel Utama 'VARCOST' asli di bagian bawah
     st.subheader("📋 Data Sheet Riil: VARCOST")
     df_varcost = ambil_data_sheet("VARCOST")
     if not df_varcost.empty:
@@ -238,3 +229,20 @@ def halaman_data_pjb():
     st.title("⏳ PJB Aging Log (data PJB aging)")
     df_pjb = ambil_data_sheet("data PJB aging")
     if not df_pjb.empty:
+        st.dataframe(df_pjb, use_container_width=True, hide_index=True)
+    else:
+        st.info("Tab 'data PJB aging' kosong.")
+
+def halaman_monitoring_mbp():
+    st.title("📡 Monitoring MBP & Progress Mateline Management")
+    st.info("Struktur penampung siap pakai untuk modul tambahan.")
+
+# ==========================================
+# 4. ROUTER EKSEKUSI HALAMAN
+# ==========================================
+if st.session_state.active_menu == "VARCOST":
+    halaman_varcost()
+elif st.session_state.active_menu == "DATA_PM":
+    halaman_data_pm()
+elif st.session_state.active_menu == "DATA_PROJECT":
+    halaman_data_project()
