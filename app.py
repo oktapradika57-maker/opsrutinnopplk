@@ -2,9 +2,9 @@ import streamlit as st
 import pandas as pd
 from streamlit_gsheets import GSheetsConnection
 
-# 1. Konfigurasi Halaman & Tema Gelap ala Telco Ops Center
+# 1. Konfigurasi Halaman & Tema Gelap Ops Center
 st.set_page_config(
-    page_title="Telco Corporate Dashboard", 
+    page_title="Telco Corporate Dashboard - Reg Kalimantan", 
     layout="wide", 
     initial_sidebar_state="collapsed"
 )
@@ -13,10 +13,10 @@ st.set_page_config(
 if "active_menu" not in st.session_state:
     st.session_state.active_menu = "VARCOST"
 
-# Tautan Spreadsheet Utama Anda (Database Reg Kalimantan)
-URL_SPREADSHEET = "https://docs.google.com/spreadsheets/d/1hIeT51_SVdNrz62s93zpZNyqepBMdNCa-mDRH-wVOIw/edit?usp=sharing"
+# Tautan Spreadsheet Utama (Database Reg Kalimantan)
+URL_SPREADSHEET = "https://google.com"
 
-# Fungsi resmi menggunakan st.connection yang disesuaikan dengan tab asli spreadsheet
+# Fungsi resmi menggunakan st.connection untuk membaca data dari Google Sheet publik
 @st.cache_data(ttl=60)
 def ambil_data_sheet(nama_sheet):
     try:
@@ -30,6 +30,7 @@ def ambil_data_sheet(nama_sheet):
 # ==========================================
 # 2. NAVIGASI ATAS (8 MENU PRESISI & INSTAN)
 # ==========================================
+# Membagi layar menjadi 8 kolom simetris sesuai dengan seluruh resource tab yang tersedia
 col1, col2, col3, col4, col5, col6, col7, col8 = st.columns(8)
 
 with col1:
@@ -37,169 +38,162 @@ with col1:
         st.session_state.active_menu = "VARCOST"
         st.rerun()
 with col2:
-    if st.button("📈\n\nKPI", use_container_width=True, key="btn_kpi"):
-        st.session_state.active_menu = "KPI"
+    if st.button("🛠️\n\nDATA PM", use_container_width=True, key="btn_pm"):
+        st.session_state.active_menu = "DATA_PM"
         st.rerun()
 with col3:
-    if st.button("🛠️\n\nMAINTENANCE", use_container_width=True, key="btn_maint"):
-        st.session_state.active_menu = "MAINTENANCE"
+    if st.button("🚀\n\nDATA PROJECT", use_container_width=True, key="btn_project"):
+        st.session_state.active_menu = "DATA_PROJECT"
         st.rerun()
 with col4:
-    if st.button("🏢\n\nASSET", use_container_width=True, key="btn_asset"):
-        st.session_state.active_menu = "ASSET"
+    if st.button("🏢\n\nDATA ASSET", use_container_width=True, key="btn_asset"):
+        st.session_state.active_menu = "DATA_ASSET"
         st.rerun()
 with col5:
-    if st.button("🚀\n\nPROJECT", use_container_width=True, key="btn_project"):
-        st.session_state.active_menu = "PROJECT"
+    if st.button("📈\n\nDATA KPI", use_container_width=True, key="btn_kpi"):
+        st.session_state.active_menu = "DATA_KPI"
         st.rerun()
 with col6:
-    if st.button("⚙️\n\nOPERATIONAL", use_container_width=True, key="btn_operational"):
-        st.session_state.active_menu = "OPERATIONAL"
+    if st.button("⚙️\n\nDATA OPERATIONAL", use_container_width=True, key="btn_operational"):
+        st.session_state.active_menu = "DATA_OPERATIONAL"
         st.rerun()
 with col7:
-    if st.button("📡\n\nMONITORING MBP", use_container_width=True, key="btn_mbp"):
-        st.session_state.active_menu = "MONITORING_MBP"
+    if st.button("⏳\n\nDATA PJB AGING", use_container_width=True, key="btn_pjb"):
+        st.session_state.active_menu = "DATA_PJB"
         st.rerun()
 with col8:
-    if st.button("📋\n\nPROGRESS MATELINE", use_container_width=True, key="btn_mateline"):
-        st.session_state.active_menu = "PROGRESS_MATELINE"
+    if st.button("📡\n\nMONITORING MBP", use_container_width=True, key="btn_mbp"):
+        st.session_state.active_menu = "MONITORING_MBP"
         st.rerun()
 
 st.markdown("---")
 
 # ==========================================
-# 3. KONTEN HALAMAN (KONEKSI LIVE GOOGLE SHEETS)
+# 3. KONTEN HALAMAN (RESOURCE LIVE GOOGLE SHEETS)
 # ==========================================
 
-# --- HALAMAN UTAMA (VARCOST TELCO + DROPDOWN ANALISA FINANSIAL) ---
+# --- MENU 1: TAB VARCOST ---
 def halaman_varcost():
-    st.title("🌐 Telecom Variable Cost & Financial Analysis")
-    st.caption("Memantau data keuangan dan fluktuasi biaya operasional wilayah Kalimantan langsung dari Google Sheets.")
+    st.title("🌐 Telecom Variable Cost Analysis")
+    st.caption("Memantau ringkasan biaya operasional dan data finansial regional dari tab 'VARCOST'.")
     st.write("")
 
-    # Membaca tab utama bernama "VARCOST"
     df_varcost = ambil_data_sheet("VARCOST")
 
-    # Dropdown Analisa Finansial (Revenue & Income)
-    st.subheader("📊 Corporate Financial Analysis")
+    # Dropdown Analisa jika struktur kolom finansial tersedia di spreadsheet Anda
+    st.subheader("📊 Corporate Financial Dropdown")
     opsi_analisa = st.selectbox(
-        "Pilih Metrik Analisis Finansial:",
+        "Pilih Lini Analisis Finansial:",
         ["Revenue Analysis (Pendapatan)", "Net Income Analysis (Laba Bersih)"]
     )
 
     if opsi_analisa == "Revenue Analysis (Pendapatan)":
-        r1, r2 = st.columns(2)
-        with r1:
-            st.info("📈 **Tren Pendapatan**")
-            if not df_varcost.empty and 'Bulan' in df_varcost.columns and 'Revenue' in df_varcost.columns:
-                data_rev = df_varcost.set_index('Bulan')[['Revenue']]
-                st.line_chart(data_rev)
-            else:
-                st.warning("Grafik akan muncul otomatis setelah kolom 'Bulan' dan 'Revenue' tersedia di tab VARCOST.")
-        with r2:
-            total_rev = df_varcost['Revenue'].iloc[-1] if not df_varcost.empty and 'Revenue' in df_varcost.columns else "-"
-            st.metric(label="Total Revenue Terkini", value=str(total_rev))
-
+        if not df_varcost.empty and 'Bulan' in df_varcost.columns and 'Revenue' in df_varcost.columns:
+            st.line_chart(df_varcost.set_index('Bulan')[['Revenue']])
+        else:
+            st.info("💡 Grafik pendapatan otomatis terbentuk jika kolom 'Bulan' dan 'Revenue' tersedia di dalam sheet.")
+            
     elif opsi_analisa == "Net Income Analysis (Laba Bersih)":
-        i1, i2 = st.columns(2)
-        with i1:
-            st.success("💰 **Tren Laba Bersih**")
-            if not df_varcost.empty and 'Bulan' in df_varcost.columns and 'Net Income' in df_varcost.columns:
-                data_inc = df_varcost.set_index('Bulan')[['Net Income']]
-                st.bar_chart(data_inc)
-            else:
-                st.warning("Grafik akan muncul otomatis setelah kolom 'Bulan' dan 'Net Income' tersedia di tab VARCOST.")
-        with i2:
-            npm = df_varcost['NPM'].iloc[-1] if not df_varcost.empty and 'NPM' in df_varcost.columns else "-"
-            st.metric(label="Net Profit Margin (NPM)", value=str(npm))
+        if not df_varcost.empty and 'Bulan' in df_varcost.columns and 'Net Income' in df_varcost.columns:
+            st.bar_chart(df_varcost.set_index('Bulan')[['Net Income']])
+        else:
+            st.info("💡 Grafik laba bersih otomatis terbentuk jika kolom 'Bulan' dan 'Net Income' tersedia di dalam sheet.")
 
-    st.markdown("---")
-
-    st.subheader("📋 Seluruh Baris Data Realtime 'VARCOST'")
+    st.write("")
+    st.subheader("📋 Data Sheet Riil: VARCOST")
     if not df_varcost.empty:
         st.dataframe(df_varcost, use_container_width=True, hide_index=True)
     else:
-        st.caption("Lembar kerja 'VARCOST' kosong atau tidak ditemukan.")
+        st.caption("Lembar kerja 'VARCOST' kosong atau gagal dibaca.")
 
-# --- HALAMAN MENU LAINNYA SESUAI TAB ASLI SPREADSHEET ---
-def halaman_kpi():
-    st.title("📈 Telecom Network KPI")
-    df_kpi = ambil_data_sheet("data KPI")
-    if not df_kpi.empty:
-        st.dataframe(df_kpi, use_container_width=True, hide_index=True)
-    else:
-        st.info("Menampilkan baris data operasional dari sheet 'data KPI'.")
-
-def halaman_maintenance():
-    st.title("🛠️ Preventive & Corrective Maintenance")
+# --- MENU 2: TAB DATA PM ---
+def halaman_data_pm():
+    st.title("🛠️ Preventive Maintenance Log (data PM)")
+    st.caption("Memantau rekam aktivitas pemeliharaan infrastruktur secara berkala.")
     df_pm = ambil_data_sheet("data PM")
     if not df_pm.empty:
         st.dataframe(df_pm, use_container_width=True, hide_index=True)
     else:
-        st.info("Menampilkan jadwal pemeliharaan dari sheet 'data PM'.")
+        st.caption("Lembar kerja 'data PM' kosong atau tidak ditemukan.")
 
-def halaman_asset():
-    st.title("🏢 Telecom Asset Inventory")
-    df_asset = ambil_data_sheet("data Asset")
-    if not df_asset.empty:
-        st.dataframe(df_asset, use_container_width=True, hide_index=True)
-    else:
-        st.info("Menampilkan inventaris aset dari sheet 'data Asset'.")
-
-def halaman_project():
-    st.title("🚀 Network Rollout & Project Deployment")
+# --- MENU 3: TAB DATA PROJECT ---
+def halaman_data_project():
+    st.title("🚀 Network Rollout & Deployment Progress (data Project)")
+    st.caption("Status pembangunan jaringan, site baru, dan integrasi sistem telekomunikasi.")
     df_project = ambil_data_sheet("data Project")
     if not df_project.empty:
         st.dataframe(df_project, use_container_width=True, hide_index=True)
     else:
-        st.info("Menampilkan daftar proyek berjalan dari sheet 'data Project'.")
+        st.caption("Lembar kerja 'data Project' kosong atau tidak ditemukan.")
 
-def halaman_operational():
-    st.title("⚙️ Network Operations Center (NOC)")
+# --- MENU 4: TAB DATA ASSET ---
+def halaman_data_asset():
+    st.title("🏢 Asset Management Inventory (data Asset)")
+    st.caption("Manajemen aset perangkat core, transmisi, menara (tower), dan fasilitas penunjang.")
+    df_asset = ambil_data_sheet("data Asset")
+    if not df_asset.empty:
+        st.dataframe(df_asset, use_container_width=True, hide_index=True)
+    else:
+        st.caption("Lembar kerja 'data Asset' kosong atau tidak ditemukan.")
+
+# --- MENU 5: TAB DATA KPI ---
+def halaman_data_kpi():
+    st.title("📈 Network Performance Indicator (data KPI)")
+    st.caption("Indikator performa kualitas jaringan telekomunikasi regional.")
+    df_kpi = ambil_data_sheet("data KPI")
+    if not df_kpi.empty:
+        st.dataframe(df_kpi, use_container_width=True, hide_index=True)
+    else:
+        st.caption("Lembar kerja 'data KPI' kosong atau tidak ditemukan.")
+
+# --- MENU 6: TAB DATA OPERATIONAL ---
+def halaman_data_operational():
+    st.title("⚙️ Network Operations Center Data (data Operational)")
+    st.caption("Log pemantauan operasional lapangan harian dan utilitas kapasitas server.")
     df_ops = ambil_data_sheet("data Operational")
     if not df_ops.empty:
         st.dataframe(df_ops, use_container_width=True, hide_index=True)
     else:
-        st.info("Menampilkan data beban harian lapangan dari sheet 'data Operational'.")
+        st.caption("Lembar kerja 'data Operational' kosong atau tidak ditemukan.")
 
-# --- HALAMAN MONITORING MBP (STRUKTUR SIAP PAKAI) ---
+# --- MENU 7: TAB DATA PJB AGING ---
+def halaman_data_pjb():
+    st.title("⏳ PJB Aging & Outstanding Log (data PJB aging)")
+    st.caption("Pelacakan berkas, dokumen kontrak, atau aging proses administrasi finansial proyek.")
+    df_pjb = ambil_data_sheet("data PJB aging")
+    if not df_pjb.empty:
+        st.dataframe(df_pjb, use_container_width=True, hide_index=True)
+    else:
+        st.caption("Lembar kerja 'data PJB aging' kosong atau tidak ditemukan.")
+
+# --- MENU 8: TAB MONITORING MBP / PROGRESS MATELINE PLACEHOLDER ---
 def halaman_monitoring_mbp():
-    st.title("📡 Monitoring MBP (Mobile Backup Power)")
-    st.caption("Melacak status penugasan unit genset mobile regional.")
-    # Opsional: Jika nanti Anda membuat tab bernama "Monitoring MBP" di Google Sheets, tabel ini akan otomatis terisi
+    st.title("📡 Monitoring MBP & Progress Mateline Management")
+    st.caption("Wadah monitoring ketersediaan daya cadangan (Mobile Backup Power) dan logistik pasokan material.")
+    
+    # Membaca data jika di masa depan Anda menambahkan tab ini ke spreadsheet utama Anda
     df_mbp = ambil_data_sheet("Monitoring MBP")
     if not df_mbp.empty:
         st.dataframe(df_mbp, use_container_width=True, hide_index=True)
     else:
-        st.info("💡 Data monitoring siap ditampilkan. Jika ingin sinkronisasi otomatis, silakan buat tab baru bernama 'Monitoring MBP' pada Google Sheets Anda.")
-
-# --- HALAMAN PROGRESS MATELINE (STRUKTUR SIAP PAKAI) ---
-def halaman_progress_mateline():
-    st.title("📋 Progress Mateline & Material Management")
-    st.caption("Manajemen rantai pasok material infrastruktur telekomunikasi.")
-    # Opsional: Jika nanti Anda membuat tab bernama "Progress Mateline" di Google Sheets, tabel ini akan otomatis terisi
-    df_mateline = ambil_data_sheet("Progress Mateline")
-    if not df_mateline.empty:
-        st.dataframe(df_mateline, use_container_width=True, hide_index=True)
-    else:
-        st.info("💡 Data progress material siap ditampilkan. Jika ingin sinkronisasi otomatis, silakan buat tab baru bernama 'Progress Mateline' pada Google Sheets Anda.")
+        st.info("💡 Struktur siap pakai. Data live otomatis termuat di halaman ini apabila Anda menambahkan tab baru bernama 'Monitoring MBP' ke Google Sheets Anda.")
 
 # ==========================================
 # 4. ROUTER EKSEKUSI HALAMAN
 # ==========================================
 if st.session_state.active_menu == "VARCOST":
     halaman_varcost()
-elif st.session_state.active_menu == "KPI":
-    halaman_kpi()
-elif st.session_state.active_menu == "MAINTENANCE":
-    halaman_maintenance()
-elif st.session_state.active_menu == "ASSET":
-    halaman_asset()
-elif st.session_state.active_menu == "PROJECT":
-    halaman_project()
-elif st.session_state.active_menu == "OPERATIONAL":
-    halaman_operational()
+elif st.session_state.active_menu == "DATA_PM":
+    halaman_data_pm()
+elif st.session_state.active_menu == "DATA_PROJECT":
+    halaman_data_project()
+elif st.session_state.active_menu == "DATA_ASSET":
+    halaman_data_asset()
+elif st.session_state.active_menu == "DATA_KPI":
+    halaman_data_kpi()
+elif st.session_state.active_menu == "DATA_OPERATIONAL":
+    halaman_data_operational()
+elif st.session_state.active_menu == "DATA_PJB":
+    halaman_data_pjb()
 elif st.session_state.active_menu == "MONITORING_MBP":
     halaman_monitoring_mbp()
-elif st.session_state.active_menu == "PROGRESS_MATELINE":
-    halaman_progress_mateline()
