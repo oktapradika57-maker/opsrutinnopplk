@@ -1,43 +1,40 @@
 import streamlit as st
-import pandas as pd
 
+# Konfigurasi Halaman
 st.set_page_config(page_title="Corporate Dashboard", layout="wide")
 
+# --- CSS CUSTOM CARD DESIGN ---
 st.markdown("""
     <style>
-    /* Membuat grid container yang presisi */
-    .menu-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 20px;
+    .card {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 20px;
         padding: 20px;
+        text-align: center;
+        transition: 0.4s;
+        cursor: pointer;
+        height: 250px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
     }
-    
-    /* Tombol dengan ukuran tetap dan desain seragam */
-    div.stButton > button {
-        width: 100% !important;
-        height: 180px !important;
-        border-radius: 20px !important;
-        border: 2px solid #ffffff !important;
-        background-color: #262730 !important;
-        color: white !important;
-        font-size: 20px !important;
-        font-weight: bold !important;
-        transition: 0.3s !important;
-        /* Mengatur posisi teks di bawah gambar */
-        display: flex !important;
-        flex-direction: column !important;
-        justify-content: flex-end !important;
-        align-items: center !important;
-        padding-bottom: 20px !important;
+    .card:hover {
+        background: rgba(255, 255, 255, 0.2);
+        transform: translateY(-10px);
+        box-shadow: 0 15px 30px rgba(0,0,0,0.3);
     }
-    
-    /* Memberikan efek visual gambar di dalam tombol */
-    .btn-img {
-        width: 80px;
-        height: 80px;
-        margin-bottom: 10px;
-        object-fit: contain;
+    .card img {
+        width: 100px;
+        height: 100px;
+        border-radius: 15px;
+        margin-bottom: 15px;
+    }
+    .card-title {
+        color: white;
+        font-weight: bold;
+        font-size: 1.2rem;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -49,37 +46,35 @@ def navigate_to(page_name):
 if 'current_page' not in st.session_state: st.session_state.current_page = "Halaman Depan"
 
 if st.session_state.current_page == "Halaman Depan":
-    st.title("Dashboard Kinarya Utama Teknik")
+    st.title("✨ Dashboard Kinarya Utama Teknik")
+    st.markdown("<br>", unsafe_allow_html=True)
     
-    # URL gambar Anda
-    img_url = "https://img.freepik.com/free-vector/team-goals-concept-illustration_114360-5290.jpg"
-    
+    # Data Menu
     menus = [
-        ("Varcost", "Monitoring Varcost"), ("KPI", "Monitoring KPI"), 
-        ("Maintenance", "Monitoring Preventive Maintenance"), ("Asset", "Monitoring Asset"),
-        ("Project", "Monitoring Project"), ("Operational", "Monitoring Operational")
+        ("Varcost", "Monitoring Varcost", "https://cdn-icons-png.flaticon.com/128/3135/3135706.png"),
+        ("KPI", "Monitoring KPI", "https://cdn-icons-png.flaticon.com/128/2921/2921226.png"),
+        ("Maintenance", "Monitoring Preventive Maintenance", "https://cdn-icons-png.flaticon.com/128/2942/2942813.png"),
+        ("Asset", "Monitoring Asset", "https://cdn-icons-png.flaticon.com/128/2830/2830284.png"),
+        ("Project", "Monitoring Project", "https://cdn-icons-png.flaticon.com/128/3063/3063198.png"),
+        ("Operational", "Monitoring Operational", "https://cdn-icons-png.flaticon.com/128/2920/2920365.png")
     ]
     
-    # Membuat Grid
-    st.markdown('<div class="menu-grid">', unsafe_allow_html=True)
-    
-    # Kita buat kolom manual untuk menampung button Streamlit
+    # Membuat Layout 3 Kolom
     cols = st.columns(3)
-    for i, (label, target) in enumerate(menus):
+    for i, (title, target, img) in enumerate(menus):
         with cols[i % 3]:
-            # Menampilkan gambar sebelum tombol agar presisi
-            st.image(img_url, width=100)
-            if st.button(label, key=label):
-                navigate_to(target)
+            # Menggunakan st.container sebagai "Tombol"
+            if st.container():
+                st.markdown(f"""
+                    <div class="card" onclick="window.location.href='?page={target}'">
+                        <img src="{img}">
+                        <div class="card-title">{title}</div>
+                    </div>
+                """, unsafe_allow_html=True)
+                # Tombol transparan di atas card agar bisa diklik
+                if st.button(f"Masuk {title}", key=title):
+                    navigate_to(target)
     
-    st.markdown('</div>', unsafe_allow_html=True)
-
-elif st.session_state.current_page == "Monitoring Asset":
-    st.title("Monitoring Asset")
-    if st.button("⬅ Kembali"): navigate_to("Halaman Depan")
-    tab1, tab2 = st.tabs(["Asset KUT", "Asset Rental"])
-    with tab1: st.write("Data Asset KUT")
-    with tab2: st.write("Data Asset Rental")
 else:
-    st.title(st.session_state.current_page)
+    st.title(f"📊 {st.session_state.current_page}")
     if st.button("⬅ Kembali"): navigate_to("Halaman Depan")
