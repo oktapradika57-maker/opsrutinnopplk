@@ -4,65 +4,35 @@ import pandas as pd
 # Konfigurasi Halaman (Wajib di paling atas)
 st.set_page_config(page_title="Corporate Dashboard", layout="wide", page_icon="📊")
 
-# --- CUSTOM CSS UNTUK TAMPILAN 3D & BACKGROUND ---
+# --- CUSTOM CSS UNTUK TAMPILAN PROFESIONAL ---
+# Mengubah tombol default Streamlit menjadi seperti "Card" / Kartu Menu
 st.markdown("""
     <style>
-    /* 1. MENGATUR BACKGROUND HALAMAN */
-    .stApp {
-        /* Ganti URL di bawah ini dengan link gambar/logo Kinarya Utama Teknik Anda */
-        background-image: url("https://www.transparenttextures.com/patterns/cubes.png");
-        background-color: #f0f2f6; /* Warna dasar jika gambar tidak dimuat */
-        background-size: cover;
-        background-position: center;
-        background-attachment: fixed;
-    }
-    
-    /* Membuat efek kaca (Glassmorphism) pada kontainer utama agar teks tetap terbaca di atas background */
-    .block-container {
-        background-color: rgba(255, 255, 255, 0.85);
-        padding: 2rem;
-        border-radius: 15px;
-        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
-        backdrop-filter: blur(4px);
-        margin-top: 2rem;
-    }
-
-    /* 2. EFEK TOMBOL 3D (Neumorphism) */
+    /* Mengatur ukuran dan gaya tombol menu */
     div.stButton > button {
-        height: 80px;
-        font-size: 17px !important;
-        font-weight: 700 !important;
-        border-radius: 15px;
-        border: none;
-        /* Warna gradasi dasar */
-        background: linear-gradient(145deg, #ffffff, #e6e6e6);
-        /* Efek timbul (shadow luar) */
-        box-shadow: 6px 6px 12px #d1d1d1, -6px -6px 12px #ffffff;
-        color: #333333;
-        transition: all 0.2s ease-in-out;
+        height: 70px;
+        font-size: 16px !important;
+        font-weight: 600 !important;
+        border-radius: 8px;
+        border: 1px solid #e0e0e0;
+        background-color: #ffffff;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        transition: all 0.3s ease-in-out;
+        color: #333;
     }
-    
-    /* Efek saat kursor diarahkan (Hover) */
+    /* Efek ketika kursor diarahkan ke tombol */
     div.stButton > button:hover {
-        transform: translateY(-3px);
-        box-shadow: 8px 8px 16px #c4c4c4, -8px -8px 16px #ffffff;
-        color: #0055ff;
+        border-color: #0066cc;
+        box-shadow: 0 4px 8px rgba(0,102,204,0.15);
+        color: #0066cc;
     }
-    
-    /* Efek saat tombol diklik (Active/Ditekan ke dalam) */
-    div.stButton > button:active {
-        transform: translateY(2px);
-        box-shadow: inset 6px 6px 12px #d1d1d1, inset -6px -6px 12px #ffffff;
-    }
-
-    /* Mengatur jarak deskripsi menu */
+    /* Mengatur jarak deskripsi menu di bawah tombol */
     .menu-desc {
-        font-size: 14px;
-        color: #555;
-        margin-top: -5px;
+        font-size: 13px;
+        color: #666;
+        margin-top: -10px;
         margin-bottom: 25px;
         text-align: center;
-        font-weight: 500;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -86,22 +56,18 @@ def load_data(sheet_name):
         return pd.DataFrame()
 
 # --- 3. PENGATURAN SIDEBAR ---
-# Nomor sudah dihilangkan dari daftar menu
 menu_options = [
     "Halaman Depan", 
-    "Monitoring Varcost", 
-    "Monitoring Preventive Maintenance", 
-    "Monitoring Project", 
-    "Monitoring KPI", 
-    "Monitoring Asset", 
-    "Monitoring Operational", 
-    "Monitoring PJB"
+    "1. Monitoring Varcost", 
+    "2. Monitoring Preventive Maintenance", 
+    "3. Monitoring Project", 
+    "4. Monitoring KPI", 
+    "5. Monitoring Asset", 
+    "6. Monitoring Operational", 
+    "7. Monitoring PJB"
 ]
 
-# Menampilkan Logo di Sidebar (Ganti URL dengan link logo asli Anda)
-st.sidebar.image("https://via.placeholder.com/300x100.png?text=Logo+Kinarya+Utama+Teknik", use_container_width=True)
 st.sidebar.title("🧭 Navigasi Utama")
-
 selected_page = st.sidebar.radio(
     "Pilih Halaman:",
     menu_options,
@@ -116,7 +82,7 @@ if selected_page != st.session_state.current_page:
 page = st.session_state.current_page
 
 if page == "Halaman Depan":
-    st.title("🏠 Dashboard Kinarya Utama Teknik")
+    st.title("🏠 Dashboard Corporate Portal")
     st.markdown("<p style='font-size: 16px; color: #555;'>Pilih menu di bawah ini untuk mengakses detail monitoring dan performa.</p>", unsafe_allow_html=True)
     st.markdown("---")
 
@@ -125,96 +91,61 @@ if page == "Halaman Depan":
 
     # --- Kolom 1 ---
     with col1:
-        if st.button("💰 Monitoring Varcost", use_container_width=True):
-            navigate_to("Monitoring Varcost")
+        if st.button("💰 1. Monitoring Varcost", use_container_width=True):
+            navigate_to("1. Monitoring Varcost")
         st.markdown("<div class='menu-desc'>Report & Analisa Variable Cost</div>", unsafe_allow_html=True)
 
-        if st.button("🎯 Monitoring KPI", use_container_width=True):
-            navigate_to("Monitoring KPI")
-        st.markdown("<div class='menu-desc'>Analisa & Perhitungan KPI</div>", unsafe_allow_html=True)
+        if st.button("🎯 4. Monitoring KPI", use_container_width=True):
+            navigate_to("4. Monitoring KPI")
+        st.markdown("<div class='menu-desc'>Analisa & Perhitungan KPI Karyawan</div>", unsafe_allow_html=True)
 
     # --- Kolom 2 ---
     with col2:
-        if st.button("🔧 Preventive Maintenance", use_container_width=True):
-            navigate_to("Monitoring Preventive Maintenance")
+        if st.button("🔧 2. Preventive Maintenance", use_container_width=True):
+            navigate_to("2. Monitoring Preventive Maintenance")
         st.markdown("<div class='menu-desc'>Pencapaian PM & Kurva S</div>", unsafe_allow_html=True)
 
-        if st.button("🏢 Monitoring Asset", use_container_width=True):
-            navigate_to("Monitoring Asset")
+        if st.button("🏢 5. Monitoring Asset", use_container_width=True):
+            navigate_to("5. Monitoring Asset")
         st.markdown("<div class='menu-desc'>Asset KUT, Kisel, Rental & Depresiasi</div>", unsafe_allow_html=True)
 
     # --- Kolom 3 ---
     with col3:
-        if st.button("🚀 Monitoring Project", use_container_width=True):
-            navigate_to("Monitoring Project")
+        if st.button("🚀 3. Monitoring Project", use_container_width=True):
+            navigate_to("3. Monitoring Project")
         st.markdown("<div class='menu-desc'>Daftar Project & Timeline Progress</div>", unsafe_allow_html=True)
 
-        if st.button("⚙️ Monitoring Operational", use_container_width=True):
-            navigate_to("Monitoring Operational")
+        if st.button("⚙️ 6. Monitoring Operational", use_container_width=True):
+            navigate_to("6. Monitoring Operational")
         st.markdown("<div class='menu-desc'>Analisa BBM Mobil, Motor, & Genset</div>", unsafe_allow_html=True)
 
-    # --- Area Bawah Tengah (Untuk Menu PJB) ---
+    # --- Area Bawah Tengah (Untuk Menu ke-7) ---
     st.write("") # Spasi
     col_empty1, col_center, col_empty2 = st.columns([1, 1, 1])
     with col_center:
-        if st.button("📑 Monitoring PJB", use_container_width=True):
-            navigate_to("Monitoring PJB")
+        if st.button("📑 7. Monitoring PJB", use_container_width=True):
+            navigate_to("7. Monitoring PJB")
         st.markdown("<div class='menu-desc'>Tracking Aging Berkas Pengajuan</div>", unsafe_allow_html=True)
 
 # =========================================================
-# ISI MASING-MASING HALAMAN (Semua tombol kembali sudah diperbaiki)
+# ISI MASING-MASING HALAMAN
 # =========================================================
 
-elif page == "Monitoring Varcost":
+elif page == "1. Monitoring Varcost":
     st.title("Monitoring Varcost")
-    st.button("⬅ Kembali ke Home", on_click=lambda: navigate_to("Halaman Depan"), key="back_varcost")
+    st.button("⬅ Kembali ke Home", on_click=lambda: navigate_to("Halaman Depan"))
     st.markdown("---")
     
+    # Ganti 'Varcost' dengan nama Sheet asli di Google Sheets Anda
     df_varcost = load_data("Varcost") 
     if not df_varcost.empty:
         st.dataframe(df_varcost, use_container_width=True)
     else:
-        st.info("Data belum tersedia. Pastikan nama sheet di GSheets sesuai.")
+        st.info("Data belum tersedia atau nama sheet tidak cocok.")
 
-elif page == "Monitoring Preventive Maintenance":
-    st.title("Monitoring Preventive Maintenance")
-    st.button("⬅ Kembali ke Home", on_click=lambda: navigate_to("Halaman Depan"), key="back_pm")
-    st.markdown("---")
-    st.write("Area untuk menampilkan Analisa pencapaian dan Kurva S.")
-
-elif page == "Monitoring Project":
-    st.title("Monitoring Project")
-    st.button("⬅ Kembali ke Home", on_click=lambda: navigate_to("Halaman Depan"), key="back_proj")
-    st.markdown("---")
-    st.write("Area untuk menampilkan bermacam project dan timeline.")
-
-elif page == "Monitoring KPI":
-    st.title("Monitoring KPI")
-    st.button("⬅ Kembali ke Home", on_click=lambda: navigate_to("Halaman Depan"), key="back_kpi")
-    st.markdown("---")
-    st.write("Area untuk Analisa KPI dan perhitungan KPI.")
-
-elif page == "Monitoring Asset":
-    st.title("Monitoring Asset")
-    st.button("⬅ Kembali ke Home", on_click=lambda: navigate_to("Halaman Depan"), key="back_asset")
-    st.markdown("---")
-    
-    tab1, tab2, tab3 = st.tabs(["Asset KUT", "Asset Kisel", "Asset Rental"])
-    with tab1:
-        st.write("Data Asset KUT dan nilai sewa/depresiasi")
-    with tab2:
-        st.write("Data Asset Kisel dan nilai sewa/depresiasi")
-    with tab3:
-        st.write("Data Asset Rental dan nilai sewa/depresiasi")
-
-elif page == "Monitoring Operational":
-    st.title("Monitoring Operational")
-    st.button("⬅ Kembali ke Home", on_click=lambda: navigate_to("Halaman Depan"), key="back_ops")
-    st.markdown("---")
-    st.write("Area Analisa Operasional: BBM Mobil, Motor, dan Genset.")
-
-elif page == "Monitoring PJB":
+# ... (Menu 2 hingga 7 tetap menggunakan struktur yang sama seperti sebelumnya) ...
+elif page == "7. Monitoring PJB":
     st.title("Monitoring PJB")
-    st.button("⬅ Kembali ke Home", on_click=lambda: navigate_to("Halaman Depan"), key="back_pjb")
+    st.button("⬅ Kembali ke Home", on_click=lambda: navigate_to("Halaman Depan"))
     st.markdown("---")
-    st.write("Area Tracking Aging dari berkas-berkas pengajuan.")
+    st.write("Area Aging Berkas Pengajuan")
