@@ -13,7 +13,7 @@ st.markdown("""
         border: 2px solid #444 !important;
         background: #262730 !important;
         color: white !important;
-        font-size: 20px !important;
+        font-size: 300px !important;
         font-weight: 700 !important;
         display: flex !important;
         flex-direction: column !important;
