@@ -2,29 +2,20 @@ import streamlit as st
 
 st.set_page_config(page_title="Corporate Dashboard", layout="wide")
 
-# --- CSS CARD DESIGN ---
+# CSS untuk kartu yang rapi
 st.markdown("""
     <style>
-    /* Styling tombol agar berbentuk kartu */
-    div.stButton > button {
-        width: 100% !important;
-        height: 220px !important;
-        border-radius: 20px !important;
-        border: 1px solid rgba(255, 255, 255, 0.2) !important;
-        background: linear-gradient(145deg, #2a2d3e, #1e202b) !important;
-        color: white !important;
-        transition: 0.3s !important;
-        display: flex !important;
-        flex-direction: column !important;
-        justify-content: center !important;
-        align-items: center !important;
+    .menu-card {
+        background: #262730;
+        border: 1px solid #444;
+        border-radius: 15px;
+        padding: 20px;
+        text-align: center;
+        transition: 0.3s;
     }
-    div.stButton > button:hover {
-        transform: translateY(-10px);
-        border: 1px solid #6c63ff !important;
-        box-shadow: 0 10px 20px rgba(0,0,0,0.3);
-    }
-    .icon-style { font-size: 50px; margin-bottom: 15px; }
+    .menu-card:hover { border-color: #6c63ff; transform: translateY(-5px); }
+    .icon { font-size: 40px; margin-bottom: 10px; }
+    .title { font-size: 18px; font-weight: bold; color: white; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -38,7 +29,6 @@ if st.session_state.current_page == "Halaman Depan":
     st.title("✨ Dashboard Kinarya Utama Teknik")
     st.markdown("<br>", unsafe_allow_html=True)
     
-    # Definisi menu (Ikon, Nama, Target)
     menus = [
         ("💰", "Varcost", "Monitoring Varcost"),
         ("🎯", "KPI", "Monitoring KPI"),
@@ -51,9 +41,17 @@ if st.session_state.current_page == "Halaman Depan":
     cols = st.columns(3)
     for i, (icon, title, target) in enumerate(menus):
         with cols[i % 3]:
-            # Tombol berfungsi langsung saat diklik
-            if st.button(f"<div class='icon-style'>{icon}</div><div style='font-size:18px;'>{title}</div>", key=title):
+            # Membuat layout kartu menggunakan markdown
+            st.markdown(f"""
+                <div class="menu-card">
+                    <div class="icon">{icon}</div>
+                    <div class="title">{title}</div>
+                </div>
+            """, unsafe_allow_html=True)
+            # Tombol diletakkan tepat di bawah/atas untuk aksi klik
+            if st.button(f"Pilih {title}", key=title):
                 navigate_to(target)
+            st.markdown("<br>", unsafe_allow_html=True)
 
 elif st.session_state.current_page == "Monitoring Asset":
     st.title("🏢 Monitoring Asset")
@@ -61,8 +59,6 @@ elif st.session_state.current_page == "Monitoring Asset":
     tab1, tab2 = st.tabs(["📦 Asset KUT", "🏗️ Asset Rental"])
     with tab1: st.write("Data Asset KUT...")
     with tab2: st.write("Data Asset Rental...")
-
 else:
     st.title(f"📊 {st.session_state.current_page}")
     if st.button("⬅ Kembali"): navigate_to("Halaman Depan")
-    st.write(f"Halaman {st.session_state.current_page} sedang dimuat.")
