@@ -126,15 +126,63 @@ def halaman_data_project():
     else:
         st.caption("Lembar kerja 'data Project' kosong atau tidak ditemukan.")
 
-# --- MENU 4: TAB DATA ASSET ---
+# --- MENU 4: TAB DATA ASSET (DENGAN SUB-MENU KUT & RENTAL) ---
 def halaman_data_asset():
     st.title("🏢 Asset Management Inventory (data Asset)")
     st.caption("Manajemen aset perangkat core, transmisi, menara (tower), dan fasilitas penunjang.")
+    st.write("")
+
+    # 1. Ambil data asli dari Google Sheets tab 'data Asset'
     df_asset = ambil_data_sheet("data Asset")
+
     if not df_asset.empty:
-        st.dataframe(df_asset, use_container_width=True, hide_index=True)
+        # 2. Membuat Sub-Menu Presisi Menggunakan st.radio (Berjejer Horizontal)
+        sub_menu = st.radio(
+            "Pilih Kategori Kategori Asset:",
+            ["Semua Asset", "Asset KUT", "Asset Rental"],
+            horizontal=True
+        )
+        st.write("")
+
+        # 💡 SILAKAN SESUAIKAN: Ganti 'Jenis Asset' di bawah ini dengan nama kolom asli di Google Sheets Anda
+        nama_kolom_pemisah = "Jenis Asset" 
+
+        # Jalankan pengecekan apakah kolom pemisah tersebut ada di spreadsheet
+        if nama_kolom_pemisah in df_asset.columns:
+            
+            if sub_menu == "Semua Asset":
+                st.subheader("📋 Daftar Seluruh Asset")
+                st.dataframe(df_asset, use_container_width=True, hide_index=True)
+                
+            elif sub_menu == "Asset KUT":
+                st.subheader("📦 Daftar Asset KUT")
+                # Memfilter baris data yang mengandung kata 'KUT' (tidak sensitif huruf besar/kecil)
+                df_kut = df_asset[df_asset[nama_kolom_pemisah].astype(str).str.contains("KUT", case=False, na=False)]
+                
+                if not df_kut.empty:
+                    st.dataframe(df_kut, use_container_width=True, hide_index=True)
+                else:
+                    st.info("Tidak ada baris data dengan kategori 'KUT' ditemukan pada kolom tersebut.")
+                    
+            elif sub_menu == "Asset Rental":
+                st.subheader("🔑 Daftar Asset Rental")
+                # Memfilter baris data yang mengandung kata 'Rental' (tidak sensitif huruf besar/kecil)
+                df_rental = df_asset[df_asset[nama_kolom_pemisah].astype(str).str.contains("Rental", case=False, na=False)]
+                
+                if not df_rental.empty:
+                    st.dataframe(df_rental, use_container_width=True, hide_index=True)
+                else:
+                    st.info("Tidak ada baris data dengan kategori 'Rental' ditemukan pada kolom tersebut.")
+        
+        else:
+            # Jika nama kolom belum diubah/tidak sesuai, tampilkan semua data sebagai cadangan aman agar tidak error
+            st.warning(f"Kolom pemisah '{nama_kolom_pemisah}' tidak ditemukan di spreadsheet. Menampilkan seluruh data.")
+            st.dataframe(df_asset, use_container_width=True, hide_index=True)
+            st.info("💡 **Tips:** Silakan buka file `app.py`, lalu ganti variabel `nama_kolom_pemisah = 'Jenis Asset'` sesuai nama kolom asli di Google Sheets Anda.")
+            
     else:
         st.caption("Lembar kerja 'data Asset' kosong atau tidak ditemukan.")
+
 
 # --- MENU 5: TAB DATA KPI ---
 def halaman_data_kpi():
