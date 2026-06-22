@@ -111,27 +111,22 @@ def halaman_varcost():
         ["Revenue Analysis (Pendapatan)", "Net Income Analysis (Laba Bersih)"]
     )
 
-    # Memuat data live dari sheet 'data SVA'
     df_sva = ambil_data_sheet("data SVA")
 
     if not df_sva.empty:
         try:
-            # Mengunci kolom berdasarkan urutan posisi fisik dari kiri (F=ke-6, G=ke-7, T=ke-20)
             col_revenue = df_sva.columns[5]   # Fisik Kolom F
             col_bulan = df_sva.columns[6]     # Fisik Kolom G
             col_income = df_sva.columns[19]   # Fisik Kolom T
 
-            # Pembersihan spasi teks data bulan
             df_sva[col_bulan] = df_sva[col_bulan].astype(str).str.strip()
 
-            # Konversi tipe data string/teks mata uang ke Float angka matematika murni
             df_sva[col_revenue] = df_sva[col_revenue].astype(str).str.replace(r'[^\d,-]', '', regex=True).str.replace(',', '.')
             df_sva[col_revenue] = pd.to_numeric(df_sva[col_revenue], errors='coerce').fillna(0)
 
             df_sva[col_income] = df_sva[col_income].astype(str).str.replace(r'[^\d,-]', '', regex=True).str.replace(',', '.')
             df_sva[col_income] = pd.to_numeric(df_sva[col_income], errors='coerce').fillna(0)
 
-            # 📈 TAMPILAN 1: REVENUE ANALYSIS
             if opsi_analisa == "Revenue Analysis (Pendapatan)":
                 st.info(f"📈 **Tren Revenue Bulanan (Sumber: data SVA - Kolom {col_revenue})**")
                 df_chart = df_sva[[col_bulan, col_revenue]].dropna()
@@ -147,7 +142,6 @@ def halaman_varcost():
                     val_rev_terakhir = df_sva[col_revenue].iloc[-1]
                     st.metric(label="📅 Revenue Periode Terakhir", value=f"{val_rev_terakhir:,.0f}".replace(",", "."))
 
-            # 📊 TAMPILAN 2: NET INCOME ANALYSIS
             elif opsi_analisa == "Net Income Analysis (Laba Bersih)":
                 st.success(f"💰 **Tren Net Income Bulanan (Sumber: data SVA - Kolom {col_income})**")
                 df_chart = df_sva[[col_bulan, col_income]].dropna()
@@ -170,7 +164,6 @@ def halaman_varcost():
 
     st.markdown("---")
 
-    # Menampilkan Tabel Utama 'VARCOST' asli di bagian bawah
     st.subheader("📋 Data Sheet Riil: VARCOST")
     df_varcost = ambil_data_sheet("VARCOST")
     if not df_varcost.empty:
@@ -178,7 +171,6 @@ def halaman_varcost():
     else:
         st.warning("Data tabel 'VARCOST' kosong atau sedang memuat. Klik tombol **REFRESH DATA** di pojok kanan atas.")
 
-# --- HALAMAN LAINNYA ---
 def halaman_data_pm():
     st.title("🛠️ Preventive Maintenance Log (data PM)")
     df_pm = ambil_data_sheet("data PM")
@@ -232,10 +224,20 @@ def halaman_monitoring_mbp():
     st.info("Struktur penampung siap pakai untuk modul tambahan.")
 
 # ==========================================
-# 4. ROUTER EKSEKUSI HALAMAN
+# 4. DICTIONARY ROUTER (ANTI-ERROR SPASI)
 # ==========================================
-if st.session_state.active_menu == "VARCOST":
-    halaman_varcost()
-elif st.session_state.active_menu == "DATA_PM":
-    halaman_data_pm()
-elif st.session_state.active_menu == "DATA_PROJECT":
+# Struktur peta fungsi halaman untuk menjamin kepresisian eksekusi
+peta_halaman = {
+    "VARCOST": halaman_varcost,
+    "DATA_PM": halaman_data_pm,
+    "DATA_PROJECT": halaman_data_project,
+    "DATA_ASSET": halaman_data_asset,
+    "DATA_KPI": halaman_data_kpi,
+    "DATA_OPERATIONAL": halaman_data_operational,
+    "DATA_PJB": halaman_data_pjb,
+    "MONITORING_MBP": halaman_monitoring_mbp
+}
+
+# Jalankan fungsi halaman berdasarkan menu aktif
+if st.session_state.active_menu in peta_halaman:
+    peta_halaman[st.session_state.active_menu]()
