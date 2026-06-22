@@ -16,7 +16,7 @@ if "active_menu" not in st.session_state:
 if "play_sound" not in st.session_state:
     st.session_state.play_sound = False
 
-# ID Spreadsheet Utama Anda (Dihasilkan dari link Database Reg Kalimantan Anda)
+# ID Spreadsheet Utama Anda (Dihasilkan dari link publik Database Reg Kalimantan Anda)
 SPREADSHEET_ID = "1hIeT51_SVdNrz62s93zpZNyqepBMdNCa-mDRH-wVOIw"
 
 # 🔊 FUNGSI EFEK SUARA KLIK
@@ -36,8 +36,7 @@ if st.session_state.play_sound:
 def ambil_data_sheet(nama_sheet):
     try:
         sheet_aman = urllib.parse.quote(nama_sheet)
-        # Tautan khusus ekspor visualisasi data engine Google Docs
-        url_csv = f"https://google.com{SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet={sheet_aman}"
+        url_csv = f"https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet={sheet_aman}"
         df = pd.read_csv(url_csv)
         return df
     except Exception as e:
@@ -99,38 +98,49 @@ def halaman_varcost():
     df_sva = ambil_data_sheet("data SVA")
 
     if not df_sva.empty:
-        df_sva.columns = df_sva.columns.str.strip()
         try:
-            # Menggunakan urutan fisik kolom: F (Revenue)=ke-5, G (Bulan)=ke-6, T (Net Income)=ke-19
-            col_revenue = df_sva.columns
-            col_bulan = df_sva.columns
-            col_income = df_sva.columns
+            # 💡 FITUR BARU ANTI-ERROR: Ambil nama asli kolom berdasarkan urutan urutan fisiknya di Excel
+            # Kolom F (Revenue) = Indeks ke-5
+            # Kolom G (Bulan) = Indeks ke-6
+            # Kolom T (Net Income) = Indeks ke-19
+            col_revenue = df_sva.columns[5]
+            col_bulan = df_sva.columns[6]
+            col_income = df_sva.columns[19]
 
             if opsi_analisa == "Revenue Analysis (Pendapatan)":
-                st.info(f"📈 **Tren Revenue Bulanan (Sumber: data SVA)**")
+                st.info(f"📈 **Tren Revenue Bulanan (Sumber: data SVA - Kolom {col_revenue})**")
+                # Pilih kolom berdasarkan nama aslinya, lalu bersihkan baris kosong (dropna)
                 df_chart = df_sva[[col_bulan, col_revenue]].dropna()
                 st.line_chart(df_chart.set_index(col_bulan))
-                st.metric(label="Revenue Periode Terakhir", value=str(df_sva[col_revenue].iloc[-1]))
+                
+                # Metrik nilai terkini (baris terakhir)
+                val_rev = df_sva[col_revenue].iloc[-1]
+                st.metric(label="Revenue Periode Terakhir", value=str(val_rev))
 
             elif opsi_analisa == "Net Income Analysis (Laba Bersih)":
-                st.success(f"💰 **Tren Net Income Bulanan (Sumber: data SVA)**")
+                st.success(f"💰 **Tren Net Income Bulanan (Sumber: data SVA - Kolom {col_income})**")
                 df_chart = df_sva[[col_bulan, col_income]].dropna()
                 st.bar_chart(df_chart.set_index(col_bulan))
-                st.metric(label="Net Income Periode Terakhir", value=str(df_sva[col_income].iloc[-1]))
-        except Exception as err:
-            st.error(f"Gagal memetakan kolom F, G, T pada 'data SVA': {err}")
+                
+                # Metrik nilai terkini (baris terakhir)
+                val_inc = df_sva[col_income].iloc[-1]
+                st.metric(label="Net Income Periode Terakhir", value=str(val_inc))
+                
+        except IndexError:
+            st.error("⚠️ Struktur kolom pada sheet 'data SVA' terdeteksi kurang dari 20 kolom (Kolom T tidak terjangkau).")
+            st.info(f"Kolom yang berhasil terbaca di sheet Anda saat ini hanya berjumlah: {len(df_sva.columns)} kolom.")
     else:
-        st.info("💡 Menunggu sinkronisasi grafik finansial dari 'data SVA'. Pastikan langkah 'Publish to Web' sudah diaktifkan.")
+        st.info("💡 Grafik finansial akan muncul setelah data 'data SVA' sukses dimuat.")
 
     st.markdown("---")
 
-    # Menampilkan Tabel Utama 'VARCOST'
+    # Menampilkan Tabel Utama 'VARCOST' asli di bagian bawah
     st.subheader("📋 Data Sheet Riil: VARCOST")
     df_varcost = ambil_data_sheet("VARCOST")
     if not df_varcost.empty:
         st.dataframe(df_varcost, use_container_width=True, hide_index=True)
     else:
-        st.warning("Data tabel 'VARCOST' kosong atau sedang memuat.")
+        st.warning("Data tabel 'VARCOST' kosong atau sedang memuat. Coba klik tombol **REFRESH DATA** di pojok kanan atas.")
 
 # --- HALAMAN LAINNYA ---
 def halaman_data_pm():
