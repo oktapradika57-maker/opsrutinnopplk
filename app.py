@@ -97,7 +97,7 @@ def halaman_varcost():
         with i1:
             st.success("💰 **Tren Laba Bersih Perusahaan (2026)**")
             data_inc = pd.DataFrame({
-                "Net Income (Miliar IDR)": [420, 450, 480, 460, 490, 520]
+                "Net Income (Miliar IDR)": [1200, 1250, 1310, 1280, 1340, 1410]
             }, index=["Jan", "Feb", "Mar", "Apr", "May", "Jun"])
             st.bar_chart(data_inc)
         with i2:
@@ -121,27 +121,13 @@ def halaman_varcost():
 
     st.write("")
     
-    # Baris Grafik Tren Varcost dan Detail Data Regional (SEKARANG SUDAH BERISI DATA VALID)
-    g1, g2 = st.columns(2)
-    with g1:
-        st.subheader("📈 Monthly Variable Cost Trend (2026)")
-        chart_data = pd.DataFrame(
-            {
-                "IP Transit":,
-                "BTS Fuel & Power":,
-                "Fiber Lease Lines": [310, 312, 315, 315, 314, 315]
-            },
-            index=["Jan", "Feb", "Mar", "Apr", "May", "Jun"]
-        )
-        st.line_chart(chart_data)
-        
-    with g2:
-        st.subheader("📊 Regional Cost Allocation")
-        region_data = pd.DataFrame({
-            "Region": ["Jabodetabek", "Sumatera", "Jawa Tengah", "Jawa Timur", "Kalimantan", "Sulawesi"],
-            "Cost (IDR B)": [45.2, 28.4, 22.1, 26.8, 18.5, 14.2]
-        })
-        st.dataframe(region_data, use_container_width=True, hide_index=True)
+    # Baris Detail Data Regional (Grafik Bulanan IP Transit yang error sudah dibuang)
+    st.subheader("📊 Regional Cost Allocation")
+    region_data = pd.DataFrame({
+        "Region": ["Jabodetabek", "Sumatera", "Jawa Tengah", "Jawa Timur", "Kalimantan", "Sulawesi"],
+        "Cost (IDR B)": [45.2, 28.4, 22.1, 26.8, 18.5, 14.2]
+    })
+    st.dataframe(region_data, use_container_width=True, hide_index=True)
 
 # --- HALAMAN MENU LAIN ---
 def halaman_kpi():
