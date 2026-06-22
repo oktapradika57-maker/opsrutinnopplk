@@ -19,7 +19,7 @@ if "play_sound" not in st.session_state:
 # ID Spreadsheet Utama Anda (Database Reg Kalimantan)
 SPREADSHEET_ID = "1hIeT51_SVdNrz62s93zpZNyqepBMdNCa-mDRH-wVOIw"
 
-# 🔊 FUNGSI EFEK SUARA KLIK (Audio HTML JavaScript)
+# 🔊 FUNGSI EFEK SUARA KLIK
 def putar_suara_klik():
     sound_url = "https://soundjay.com"
     html_code = f"""
@@ -31,11 +31,12 @@ if st.session_state.play_sound:
     putar_suara_klik()
     st.session_state.play_sound = False
 
-# 🌐 FUNGSI UTAMA: Jalur Ekspor Standar Google (Jauh lebih stabil & Anti-Block)
-@st.cache_data(ttl=2) # Cache dipangkas sangat tipis agar data langsung sinkron
+# 🌐 FUNGSI UTAMA: Jalur Ekspor CSV Langsung yang Terbukti Paling Kuat Menembus Google Sheets
+@st.cache_data(ttl=2)
 def ambil_data_sheet(nama_sheet):
     try:
         sheet_aman = urllib.parse.quote(nama_sheet)
+        # Beralih menggunakan format /export?format=csv&sheet= (Format unduhan paksa paling stabil)
         url_csv = f"https://google.com{SPREADSHEET_ID}/export?format=csv&sheet={sheet_aman}"
         df = pd.read_csv(url_csv)
         return df
@@ -100,7 +101,6 @@ st.markdown("---")
 # 3. KONTEN HALAMAN (RESOURCE LIVE)
 # ==========================================
 
-# --- MENU 1: TAB VARCOST ---
 def halaman_varcost():
     st.title("🌐 Telecom Variable Cost Analysis")
     st.caption("Memantau ringkasan biaya operasional wilayah Kalimantan langsung dari Google Sheets.")
@@ -112,22 +112,27 @@ def halaman_varcost():
         ["Revenue Analysis (Pendapatan)", "Net Income Analysis (Laba Bersih)"]
     )
 
+    # Memuat data live dari sheet 'data SVA'
     df_sva = ambil_data_sheet("data SVA")
 
     if not df_sva.empty:
         try:
+            # Mengunci kolom berdasarkan urutan posisi fisik dari kiri (F=ke-6, G=ke-7, T=ke-20)
             col_revenue = df_sva.columns[5]   # Fisik Kolom F
             col_bulan = df_sva.columns[6]     # Fisik Kolom G
             col_income = df_sva.columns[19]   # Fisik Kolom T
 
+            # Pembersihan spasi teks data bulan
             df_sva[col_bulan] = df_sva[col_bulan].astype(str).str.strip()
 
+            # Konversi tipe data string/teks mata uang ke Float angka matematika murni
             df_sva[col_revenue] = df_sva[col_revenue].astype(str).str.replace(r'[^\d,-]', '', regex=True).str.replace(',', '.')
             df_sva[col_revenue] = pd.to_numeric(df_sva[col_revenue], errors='coerce').fillna(0)
 
             df_sva[col_income] = df_sva[col_income].astype(str).str.replace(r'[^\d,-]', '', regex=True).str.replace(',', '.')
             df_sva[col_income] = pd.to_numeric(df_sva[col_income], errors='coerce').fillna(0)
 
+            # 📈 TAMPILAN 1: REVENUE ANALYSIS
             if opsi_analisa == "Revenue Analysis (Pendapatan)":
                 st.info(f"📈 **Tren Revenue Bulanan (Sumber: data SVA - Kolom {col_revenue})**")
                 df_chart = df_sva[[col_bulan, col_revenue]].dropna()
@@ -138,17 +143,12 @@ def halaman_varcost():
                 
                 m1, m2 = st.columns(2)
                 with m1:
-                    st.metric(
-                        label="💰 TOTAL SELURUH REVENUE", 
-                        value=f"{total_akumulasi_revenue:,.0f}".replace(",", ".")
-                    )
+                    st.metric(label="💰 TOTAL SELURUH REVENUE", value=f"{total_akumulasi_revenue:,.0f}".replace(",", "."))
                 with m2:
                     val_rev_terakhir = df_sva[col_revenue].iloc[-1]
-                    st.metric(
-                        label="📅 Revenue Periode Terakhir", 
-                        value=f"{val_rev_terakhir:,.0f}".replace(",", ".")
-                    )
+                    st.metric(label="📅 Revenue Periode Terakhir", value=f"{val_rev_terakhir:,.0f}".replace(",", "."))
 
+            # 📊 TAMPILAN 2: NET INCOME ANALYSIS
             elif opsi_analisa == "Net Income Analysis (Laba Bersih)":
                 st.success(f"💰 **Tren Net Income Bulanan (Sumber: data SVA - Kolom {col_income})**")
                 df_chart = df_sva[[col_bulan, col_income]].dropna()
@@ -159,16 +159,10 @@ def halaman_varcost():
                 
                 m1, m2 = st.columns(2)
                 with m1:
-                    st.metric(
-                        label="💵 TOTAL SELURUH NET INCOME", 
-                        value=f"{total_akumulasi_income:,.0f}".replace(",", ".")
-                    )
+                    st.metric(label="💵 TOTAL SELURUH NET INCOME", value=f"{total_akumulasi_income:,.0f}".replace(",", ".")safe)
                 with m2:
                     val_inc_terakhir = df_sva[col_income].iloc[-1]
-                    st.metric(
-                        label="📅 Net Income Periode Terakhir", 
-                        value=f"{val_inc_terakhir:,.0f}".replace(",", ".")
-                    )
+                    st.metric(label="📅 Net Income Periode Terakhir", value=f"{val_inc_terakhir:,.0f}".replace(",", "."))
                 
         except Exception as err:
             st.error(f"Gagal memproses perhitungan angka pada tab 'data SVA': {err}")
@@ -177,6 +171,7 @@ def halaman_varcost():
 
     st.markdown("---")
 
+    # Menampilkan Tabel Utama 'VARCOST' asli di bagian bawah
     st.subheader("📋 Data Sheet Riil: VARCOST")
     df_varcost = ambil_data_sheet("VARCOST")
     if not df_varcost.empty:
@@ -242,7 +237,3 @@ def halaman_monitoring_mbp():
 # ==========================================
 if st.session_state.active_menu == "VARCOST":
     halaman_varcost()
-elif st.session_state.active_menu == "DATA_PM":
-    halaman_data_pm()
-elif st.session_state.active_menu == "DATA_PROJECT":
-    halaman_data_project()
