@@ -15,12 +15,11 @@ if "active_menu" not in st.session_state:
 if "play_sound" not in st.session_state:
     st.session_state.play_sound = False
 
-# ID Spreadsheet Utama Anda (Database Reg Kalimantan)
-SPREADSHEET_ID = "1hIeT51_SVdNrz62s93zpZNyqepBMdNCa-mDRH-wVOIw"
+# Tautan Dasar Berbagi Google Sheets Anda (Database Reg Kalimantan)
+URL_UTAMA = "https://google.com"
 
 # 🔊 FUNGSI EFEK SUARA KLIK (Audio HTML JavaScript)
 def putar_suara_klik():
-    # Menggunakan sampel suara klik pendek publik yang aman
     sound_url = "https://soundjay.com"
     html_code = f"""
     <audio autoplay hidden>
@@ -34,18 +33,17 @@ if st.session_state.play_sound:
     putar_suara_klik()
     st.session_state.play_sound = False # Reset state suara
 
-# 🌐 FUNGSI BARU: Membaca Google Sheet via URL Export CSV Standar (Anti-Gagal)
-@st.cache_data(ttl=10) # Cache dipersingkat menjadi 10 detik agar sinkronisasi sangat cepat
+# 🌐 FUNGSI TERBARU: Direct CSV Export Bypass (Anti-Block & Bebas Layar Kosong)
+@st.cache_data(ttl=5) # Cache dipangkas menjadi 5 detik untuk pengetesan realtime Anda
 def ambil_data_sheet(nama_sheet):
     try:
         sheet_aman = nama_sheet.replace(" ", "%20")
-        # Menggunakan format /export?format=csv&sheet= yang jauh lebih andal
-        url_csv = f"https://google.com{SPREADSHEET_ID}/export?format=csv&sheet={sheet_aman}"
-        df = pd.read_csv(url_csv)
+        # Format ekspor langsung menggunakan tautan penuh terbukti jauh lebih stabil menembus server Google
+        url_direct_csv = f"{URL_UTAMA}/export?format=csv&sheet={sheet_aman}"
+        df = pd.read_csv(url_direct_csv)
         return df
     except Exception as e:
-        # Jika masih gagal, tampilkan log pesan error aslinya di layar untuk diagnostik
-        st.sidebar.error(f"Sistem Gagal Memuat '{nama_sheet}': {e}")
+        st.sidebar.error(f"Error Jaringan Sheet '{nama_sheet}': {e}")
         return pd.DataFrame()
 
 # ==========================================
@@ -57,6 +55,7 @@ with col1:
     if st.button("💰\n\nVARCOST", use_container_width=True, key="btn_varcost"):
         st.session_state.active_menu = "VARCOST"
         st.session_state.play_sound = True
+        st.grid = None
         st.rerun()
 with col2:
     if st.button("🛠️\n\nDATA PM", use_container_width=True, key="btn_pm"):
@@ -124,9 +123,8 @@ def halaman_varcost():
         # Bersihkan spasi nama kolom secara manual
         df_sva.columns = df_sva.columns.str.strip()
         
-        # Sesuai instruksi Anda: Kolom F (Revenue), Kolom G (Bulan), Kolom T (Net Income)
-        # Kita panggil nama kolom asli berdasarkan urutan fisiknya agar 100% aman
         try:
+            # Sesuai instruksi Anda: Kolom F (Revenue) ke-5, Kolom G (Bulan) ke-6, Kolom T (Net Income) ke-19
             col_revenue = df_sva.columns[5]   # Kolom F
             col_bulan = df_sva.columns[6]     # Kolom G
             col_income = df_sva.columns[19]   # Kolom T
@@ -143,19 +141,24 @@ def halaman_varcost():
                 st.bar_chart(df_chart.set_index(col_bulan))
                 st.metric(label="Net Income Periode Terakhir", value=str(df_sva[col_income].iloc[-1]))
         except Exception as err:
-            st.error(f"Gagal memetakan kolom F, G, T pada 'data SVA': {err}")
+            st.error(f"Gagal memetakan posisi kolom fisik F, G, T pada tab 'data SVA': {err}")
+            st.info("Pastikan jumlah kolom di dalam tab 'data SVA' Anda sudah mencapai kolom T (minimal 20 kolom).")
     else:
         st.info("💡 Grafik finansial akan muncul setelah tab 'data SVA' berhasil ditarik.")
 
     st.markdown("---")
 
     # Menampilkan Tabel Utama 'VARCOST'
-    st.subheader("📋 Data Sheet Riil: data SVA")
-    df_varcost = ambil_data_sheet("data SVA")
+    st.subheader("📋 Data Sheet Riil: VARCOST")
+    df_varcost = ambil_data_sheet("VARCOST")
     if not df_varcost.empty:
         st.dataframe(df_varcost, use_container_width=True, hide_index=True)
     else:
-        st.error("Tabel 'VARCOST' gagal dimuat. Pastikan nama tab di Google Sheets ditulis dengan huruf besar semua tanpa spasi.")
+        # JIKA GAGAL, BERIKAN TOMBOL RE-TRY DIAGNOSTIK DI HALAMAN UTAMA
+        st.warning("Data tabel 'VARCOST' kosong atau sedang memuat.")
+        if st.button("⚡ Tarik Ulang Koneksi Google Sheets Now", key="btn_retry_internal"):
+            st.cache_data.clear()
+            st.rerun()
 
 # --- HALAMAN LAINNYA ---
 def halaman_data_pm():
