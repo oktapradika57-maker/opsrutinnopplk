@@ -1,79 +1,76 @@
 import streamlit as st
 import pandas as pd
 
-# Konfigurasi Halaman
 st.set_page_config(page_title="Corporate Dashboard", layout="wide", page_icon="📊")
 
-# --- CSS ---
+# --- CSS PRESISI DENGAN GAMBAR ---
 st.markdown("""
     <style>
     div.stButton > button {
         width: 100% !important;
-        height: 120px !important;
-        border-radius: 15px !important;
-        border: none !important;
+        height: 150px !important; /* Tinggi seragam */
+        border-radius: 20px !important;
+        border: 2px solid rgba(255,255,255,0.3) !important;
         color: white !important;
         font-size: 16px !important;
-        font-weight: 700 !important;
+        font-weight: 800 !important;
         transition: 0.3s !important;
         display: flex !important;
         flex-direction: column !important;
         justify-content: center !important;
         align-items: center !important;
+        background-size: cover !important;
+        background-position: center !important;
+        text-shadow: 1px 1px 2px #000;
     }
-    div.stButton > button:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+    div.stButton > button:hover { transform: scale(1.02); box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
     </style>
 """, unsafe_allow_html=True)
 
-# --- FUNGSI ---
 def navigate_to(page_name):
     st.session_state.current_page = page_name
     st.rerun()
 
 if 'current_page' not in st.session_state: st.session_state.current_page = "Halaman Depan"
 
-# --- SIDEBAR ---
-st.sidebar.title("🧭 Navigasi Utama")
-menu_options = ["Halaman Depan", "Monitoring Varcost", "Monitoring Preventive Maintenance", 
-                "Monitoring Project", "Monitoring KPI", "Monitoring Asset", "Monitoring Operational", "Monitoring PJB"]
-selected_page = st.sidebar.radio("Pilih Halaman:", menu_options, index=menu_options.index(st.session_state.current_page))
-if selected_page != st.session_state.current_page: navigate_to(selected_page)
-
-# --- KONTEN ---
 if st.session_state.current_page == "Halaman Depan":
     st.title("✨ Dashboard Kinarya Utama Teknik")
     st.markdown("---")
     
+    # Daftar menu dengan link gambar (bisa diganti URL gambar Anda sendiri)
+    # Gunakan gambar ikon/background yang simpel agar teks tetap terbaca
     menus = [
-        ("💰\nVarcost", "Monitoring Varcost", "#667eea"),
-        ("🎯\nKPI", "Monitoring KPI", "#ff9a9e"),
-        ("🔧\nMaintenance", "Monitoring Preventive Maintenance", "#a18cd1"),
-        ("🏢\nAsset", "Monitoring Asset", "#84fab0"),
-        ("🚀\nProject", "Monitoring Project", "#fa709a"),
-        ("⚙️\nOperational", "Monitoring Operational", "#ffd3a5"),
-        ("📑\nPJB", "Monitoring PJB", "#5ee7df")
+        ("Varcost", "Monitoring Varcost", "https://img.freepik.com/free-vector/finance-concept-illustration_114360-3944.jpg"),
+        ("KPI", "Monitoring KPI", "https://img.freepik.com/free-vector/target-marketing-concept-illustration_114360-3793.jpg"),
+        ("Maintenance", "Monitoring Preventive Maintenance", "https://img.freepik.com/free-vector/mechanic-working-car-concept-illustration_114360-1490.jpg"),
+        ("Asset", "Monitoring Asset", "https://img.freepik.com/free-vector/inventory-management-concept-illustration_114360-3843.jpg"),
+        ("Project", "Monitoring Project", "https://img.freepik.com/free-vector/project-management-concept-illustration_114360-2374.jpg"),
+        ("Operational", "Monitoring Operational", "https://img.freepik.com/free-vector/fuel-pump-concept-illustration_114360-3840.jpg")
     ]
     
-    for i, (label, target, color) in enumerate(menus):
-        st.markdown(f"""<style>div.stButton:nth-child({i+1}) > button {{ background: {color} !important; }}</style>""", unsafe_allow_html=True)
-
     cols = st.columns(3)
-    for i, (label, target, color) in enumerate(menus):
+    for i, (label, target, img_url) in enumerate(menus):
+        # Mengatur background gambar per tombol melalui CSS injeksi
+        st.markdown(f"""
+            <style>
+            div.stButton:nth-child({i+1}) > button {{
+                background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('{img_url}') !important;
+            }}
+            </style>
+        """, unsafe_allow_html=True)
+        
         with cols[i % 3]:
             if st.button(label): navigate_to(target)
+            st.write("") # Spacer
 
 elif st.session_state.current_page == "Monitoring Asset":
     st.title("🏢 Monitoring Asset")
-    if st.button("⬅ Kembali ke Home"): navigate_to("Halaman Depan")
-    st.markdown("---")
-    tab1, tab2, tab3 = st.tabs(["📦 Asset KUT", "🏗️ Asset Rental", "📊 Ringkasan"])
-    with tab1: st.write("Data Asset KUT...")
-    with tab2: st.write("Data Asset Rental...")
-    with tab3: st.write("Analisa & Depresiasi...")
+    if st.button("⬅ Kembali"): navigate_to("Halaman Depan")
+    tab1, tab2 = st.tabs(["📦 Asset KUT", "🏗️ Asset Rental"])
+    with tab1: st.write("Data Asset KUT")
+    with tab2: st.write("Data Asset Rental")
 
 else:
     st.title(f"📊 {st.session_state.current_page}")
-    if st.button("⬅ Kembali ke Home"): navigate_to("Halaman Depan")
-    st.markdown("---")
-    # Baris yang tadi error sudah diperbaiki di bawah ini:
-    st.write(f"Konten untuk {st.session_state.current_page} sedang diproses.")
+    if st.button("⬅ Kembali"): navigate_to("Halaman Depan")
+    st.write(f"Konten untuk {st.session_state.current_page} sedang disiapkan.")
