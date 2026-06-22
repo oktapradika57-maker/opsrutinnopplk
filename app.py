@@ -19,7 +19,7 @@ if "play_sound" not in st.session_state:
 # ID Spreadsheet Utama Anda (Dihasilkan dari link publik Database Reg Kalimantan Anda)
 SPREADSHEET_ID = "1hIeT51_SVdNrz62s93zpZNyqepBMdNCa-mDRH-wVOIw"
 
-# 🔊 FUNGSI EFEK SUARA KLIK
+# 🔊 FUNGSI EFEK SUARA KLIK (Audio HTML JavaScript)
 def putar_suara_klik():
     sound_url = "https://soundjay.com"
     html_code = f"""
@@ -31,12 +31,12 @@ if st.session_state.play_sound:
     putar_suara_klik()
     st.session_state.play_sound = False
 
-# 🌐 FUNGSI UTAMA: Membaca Google Sheet via Direct Web Export (Anti-Gagal setelah Publish to Web)
+# 🌐 FUNGSI UTAMA: Membaca Google Sheet via Direct Web Export
 @st.cache_data(ttl=5) # Segarkan data otomatis dalam 5 detik
 def ambil_data_sheet(nama_sheet):
     try:
         sheet_aman = urllib.parse.quote(nama_sheet)
-        url_csv = f"https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet={sheet_aman}"
+        url_csv = f"https://google.com{SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet={sheet_aman}"
         df = pd.read_csv(url_csv)
         return df
     except Exception as e:
@@ -83,6 +83,7 @@ st.markdown("---")
 # 3. KONTEN HALAMAN (RESOURCE LIVE)
 # ==========================================
 
+# --- MENU 1: TAB VARCOST ---
 def halaman_varcost():
     st.title("🌐 Telecom Variable Cost Analysis")
     st.caption("Memantau ringkasan biaya operasional wilayah Kalimantan langsung dari Google Sheets.")
@@ -99,38 +100,66 @@ def halaman_varcost():
 
     if not df_sva.empty:
         try:
-            # 💡 FITUR BARU ANTI-ERROR: Ambil nama asli kolom berdasarkan urutan urutan fisiknya di Excel
-            # Kolom F (Revenue) = Indeks ke-5
-            # Kolom G (Bulan) = Indeks ke-6
-            # Kolom T (Net Income) = Indeks ke-19
-            col_revenue = df_sva.columns[5]
-            col_bulan = df_sva.columns[6]
-            col_income = df_sva.columns[19]
+            # Mengunci nama kolom berdasarkan urutan fisik posisi kolom (F=5, G=6, T=19)
+            col_revenue = df_sva.columns[5]   # Kolom F
+            col_bulan = df_sva.columns[6]     # Kolom G
+            col_income = df_sva.columns[19]   # Kolom T
 
+            # 🛠️ PROSES DATA: Pembersihan & Konversi Tipe Data Teks ke Angka Matematika
+            df_sva[col_revenue] = df_sva[col_revenue].astype(str).str.replace(r'[^\d,-]', '', regex=True).str.replace(',', '.')
+            df_sva[col_revenue] = pd.to_numeric(df_sva[col_revenue], errors='coerce').fillna(0)
+
+            df_sva[col_income] = df_sva[col_income].astype(str).str.replace(r'[^\d,-]', '', regex=True).str.replace(',', '.')
+            df_sva[col_income] = pd.to_numeric(df_sva[col_income], errors='coerce').fillna(0)
+
+            # 📈 TAMPILAN 1: REVENUE ANALYSIS
             if opsi_analisa == "Revenue Analysis (Pendapatan)":
                 st.info(f"📈 **Tren Revenue Bulanan (Sumber: data SVA - Kolom {col_revenue})**")
-                # Pilih kolom berdasarkan nama aslinya, lalu bersihkan baris kosong (dropna)
                 df_chart = df_sva[[col_bulan, col_revenue]].dropna()
                 st.line_chart(df_chart.set_index(col_bulan))
                 
-                # Metrik nilai terkini (baris terakhir)
-                val_rev = df_sva[col_revenue].iloc[-1]
-                st.metric(label="Revenue Periode Terakhir", value=str(val_rev))
+                # Menghitung Jumlah Akumulasi Total Seluruh Baris Revenue
+                total_akumulasi_revenue = df_sva[col_revenue].sum()
+                
+                m1, m2 = st.columns(2)
+                with m1:
+                    st.metric(
+                        label="💰 TOTAL SELURUH REVENUE", 
+                        value=f"{total_akumulasi_revenue:,.0f}".replace(",", ".")
+                    )
+                with m2:
+                    val_rev_terakhir = df_sva[col_revenue].iloc[-1]
+                    st.metric(
+                        label="📅 Revenue Periode Terakhir", 
+                        value=f"{val_rev_terakhir:,.0f}".replace(",", ".")
+                    )
 
+            # 📊 TAMPILAN 2: NET INCOME ANALYSIS
             elif opsi_analisa == "Net Income Analysis (Laba Bersih)":
                 st.success(f"💰 **Tren Net Income Bulanan (Sumber: data SVA - Kolom {col_income})**")
                 df_chart = df_sva[[col_bulan, col_income]].dropna()
                 st.bar_chart(df_chart.set_index(col_bulan))
                 
-                # Metrik nilai terkini (baris terakhir)
-                val_inc = df_sva[col_income].iloc[-1]
-                st.metric(label="Net Income Periode Terakhir", value=str(val_inc))
+                # Menghitung Jumlah Akumulasi Total Seluruh Baris Net Income
+                total_akumulasi_income = df_sva[col_income].sum()
                 
-        except IndexError:
-            st.error("⚠️ Struktur kolom pada sheet 'data SVA' terdeteksi kurang dari 20 kolom (Kolom T tidak terjangkau).")
-            st.info(f"Kolom yang berhasil terbaca di sheet Anda saat ini hanya berjumlah: {len(df_sva.columns)} kolom.")
+                m1, m2 = st.columns(2)
+                with m1:
+                    st.metric(
+                        label="💵 TOTAL SELURUH NET INCOME", 
+                        value=f"{total_akumulasi_income:,.0f}".replace(",", ".")
+                    )
+                with m2:
+                    val_inc_terakhir = df_sva[col_income].iloc[-1]
+                    st.metric(
+                        label="📅 Net Income Periode Terakhir", 
+                        value=f"{val_inc_terakhir:,.0f}".replace(",", ".")
+                    )
+                
+        except Exception as err:
+            st.error(f"Gagal memproses perhitungan angka pada tab 'data SVA': {err}")
     else:
-        st.info("💡 Grafik finansial akan muncul setelah data 'data SVA' sukses dimuat.")
+        st.info("💡 Grafik dan perhitungan finansial akan muncul setelah data 'data SVA' berhasil ditarik.")
 
     st.markdown("---")
 
@@ -185,14 +214,3 @@ if st.session_state.active_menu == "VARCOST":
 elif st.session_state.active_menu == "DATA_PM":
     halaman_data_pm()
 elif st.session_state.active_menu == "DATA_PROJECT":
-    halaman_data_project()
-elif st.session_state.active_menu == "DATA_ASSET":
-    halaman_data_asset()
-elif st.session_state.active_menu == "DATA_KPI":
-    halaman_data_kpi()
-elif st.session_state.active_menu == "DATA_OPERATIONAL":
-    halaman_data_operational()
-elif st.session_state.active_menu == "DATA_PJB":
-    halaman_data_pjb()
-elif st.session_state.active_menu == "MONITORING_MBP":
-    halaman_monitoring_mbp()
