@@ -2,15 +2,14 @@ import streamlit as st
 
 st.set_page_config(page_title="Corporate Dashboard", layout="wide")
 
-# CSS untuk membuat tombol terlihat seperti kartu
+# CSS untuk membuat tombol terlihat seperti kartu yang rapi
 st.markdown("""
     <style>
-    /* Styling tombol agar lebih menarik */
     div.stButton > button {
         width: 100% !important;
-        height: 180px !important;
+        height: 200px !important;
         border-radius: 15px !important;
-        border: 2px solid #555 !important;
+        border: 1px solid #444 !important;
         background-color: #262730 !important;
         color: white !important;
         font-size: 18px !important;
@@ -24,7 +23,9 @@ st.markdown("""
     div.stButton > button:hover {
         border-color: #6c63ff !important;
         transform: translateY(-5px);
+        background-color: #31333F !important;
     }
+    .icon { font-size: 50px; margin-bottom: 10px; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -36,9 +37,8 @@ if 'current_page' not in st.session_state: st.session_state.current_page = "Hala
 
 if st.session_state.current_page == "Halaman Depan":
     st.title("✨ Dashboard Kinarya Utama Teknik")
-    st.markdown("---")
+    st.markdown("<br>", unsafe_allow_html=True)
     
-    # Daftar Menu dengan Emoji sebagai Icon (pasti muncul)
     menus = [
         ("💰", "Varcost", "Monitoring Varcost"),
         ("🎯", "KPI", "Monitoring KPI"),
@@ -49,12 +49,12 @@ if st.session_state.current_page == "Halaman Depan":
     ]
     
     cols = st.columns(3)
-    for i, (icon, label, target) in enumerate(menus):
+    for i, (icon, title, target) in enumerate(menus):
         with cols[i % 3]:
-            # Kita gunakan format emoji + label agar pasti tampil
-            if st.button(f"{icon}\n\n{label}", key=label):
+            # Kita menggunakan label yang menggabungkan ikon dan teks
+            # Ini adalah cara paling kompatibel agar tombol bisa diklik
+            if st.button(f"<div class='icon'>{icon}</div>{title}", key=title):
                 navigate_to(target)
-            st.write("") # Memberi jarak
 
 elif st.session_state.current_page == "Monitoring Asset":
     st.title("🏢 Monitoring Asset")
