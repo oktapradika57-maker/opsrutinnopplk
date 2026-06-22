@@ -11,7 +11,7 @@ st.set_page_config(
 
 # Inisialisasi session state untuk navigasi halaman jika belum ada
 if "active_menu" not in st.session_state:
-    st.session_state.active_menu = "VARCOST"
+    st.session_state.active_menu = "DATA SVA"
 if "play_sound" not in st.session_state:
     st.session_state.play_sound = False
 
