@@ -7,59 +7,95 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# 2. Judul Dasbor (Opsional)
-st.title("📊 Enterprise Analytics Dashboard")
-st.markdown("---")
+# Inisialisasi menu aktif di session state jika belum ada
+if "active_menu" not in st.session_state:
+    st.session_state.active_menu = "VARCOST"
 
-# 3. Membuat Susunan Grid Menu yang Presisi (6 Kolom Sesuai Jumlah Menu)
-# Menggunakan st.columns agar tombol berjejer rapi ke samping secara otomatis
+# ==========================================
+# 2. NAVIGASI ATAS (PRESISI & INSTAN)
+# ==========================================
+# Membuat 6 kolom yang sama rata ukurannya secara matematis
 col1, col2, col3, col4, col5, col6 = st.columns(6)
 
 # Menu 1: VARCOST
 with col1:
-    if st.button("💰\n\nVARCOST", use_container_width=True):
+    if st.button("💰\n\nVARCOST", use_container_width=True, key="btn_varcost"):
         st.session_state.active_menu = "VARCOST"
+        st.rerun() # Langsung muat ulang halaman secara instan
 
 # Menu 2: KPI
 with col2:
-    if st.button("📈\n\nKPI", use_container_width=True):
+    if st.button("📈\n\nKPI", use_container_width=True, key="btn_kpi"):
         st.session_state.active_menu = "KPI"
+        st.rerun()
 
 # Menu 3: MAINTENANCE
 with col3:
-    if st.button("🛠️\n\nMAINTENANCE", use_container_width=True):
+    if st.button("🛠️\n\nMAINTENANCE", use_container_width=True, key="btn_maint"):
         st.session_state.active_menu = "MAINTENANCE"
+        st.rerun()
 
 # Menu 4: ASSET
 with col4:
-    if st.button("🏢\n\nASSET", use_container_width=True):
+    if st.button("🏢\n\nASSET", use_container_width=True, key="btn_asset"):
         st.session_state.active_menu = "ASSET"
+        st.rerun()
 
 # Menu 5: PROJECT
 with col5:
-    if st.button("🚀\n\nPROJECT", use_container_width=True):
+    if st.button("🚀\n\nPROJECT", use_container_width=True, key="btn_project"):
         st.session_state.active_menu = "PROJECT"
+        st.rerun()
 
-# Menu 6: OPERATIONAL (Ejaan sudah diperbaiki)
+# Menu 6: OPERATIONAL
 with col6:
-    if st.button("⚙️\n\nOPERATIONAL", use_container_width=True):
+    if st.button("⚙️\n\nOPERATIONAL", use_container_width=True, key="btn_operational"):
         st.session_state.active_menu = "OPERATIONAL"
+        st.rerun()
 
 st.markdown("---")
 
-# 4. Logika Konten (Menampilkan halaman sesuai menu yang diklik)
-if "active_menu" not in st.session_state:
-    st.session_state.active_menu = "VARCOST" # Menu default saat pertama buka
+# ==========================================
+# 3. LOGIKA KONTEN HALAMAN (ROUTING)
+# ==========================================
+# Fungsi pembantu untuk memisahkan logika per halaman agar rapi
 
-st.subheader(f"Halaman: {st.session_state.active_menu}")
+def halaman_varcost():
+    st.subheader("💰 Halaman Variable Cost")
+    st.info("Menampilkan metrik dan grafik Variable Cost (Biaya Variabel) Anda di sini.")
+    # Saku/Tulis kode grafik atau tabel Pandas Anda di bawah ini
 
-# Contoh visualisasi konten berdasarkan menu aktif
+def halaman_kpi():
+    st.subheader("📈 Halaman Key Performance Indicator")
+    st.success("Menampilkan indikator pencapaian kinerja utama (KPI) perusahaan.")
+
+def halaman_maintenance():
+    st.subheader("🛠️ Halaman Maintenance")
+    st.warning("Menampilkan jadwal dan status pemeliharaan mesin/perangkat.")
+
+def halaman_asset():
+    st.subheader("🏢 Halaman Asset")
+    st.write("Daftar dan nilai manajemen aset perusahaan saat ini.")
+
+def halaman_project():
+    st.subheader("🚀 Halaman Project")
+    st.write("Status perkembangan proyek berjalan saat ini.")
+
+def halaman_operational():
+    st.subheader("⚙️ Halaman Operational")
+    st.write("Data harian terkait operasional lapangan.")
+
+
+# Eksekusi fungsi halaman berdasarkan tombol menu yang sedang aktif
 if st.session_state.active_menu == "VARCOST":
-    st.info("Menampilkan metrik Variable Cost (Biaya Variabel)...")
-    # Anda bisa memasukkan grafik/tabel data Anda di sini
-    
+    halaman_varcost()
 elif st.session_state.active_menu == "KPI":
-    st.success("Menampilkan indikator Key Performance Indicator...")
-    
+    halaman_kpi()
 elif st.session_state.active_menu == "MAINTENANCE":
-    st.warning("Menampilkan jadwal dan status Pemeliharaan Aset...")
+    halaman_maintenance()
+elif st.session_state.active_menu == "ASSET":
+    halaman_asset()
+elif st.session_state.active_menu == "PROJECT":
+    halaman_project()
+elif st.session_state.active_menu == "OPERATIONAL":
+    halaman_operational()
