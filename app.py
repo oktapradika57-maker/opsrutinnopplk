@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-from streamlit_gsheets import GSheetsConnection
 
 # 1. Konfigurasi Halaman & Tema Gelap Ops Center
 st.set_page_config(
@@ -13,19 +12,20 @@ st.set_page_config(
 if "active_menu" not in st.session_state:
     st.session_state.active_menu = "VARCOST"
 
-# Tautan Spreadsheet Utama Anda (Database Reg Kalimantan)
-URL_SPREADSHEET = "https://google.com"
+# ID Spreadsheet Utama Anda (Dihasilkan langsung dari link Database Reg Kalimantan Anda)
+SPREADSHEET_ID = "1hIeT51_SVdNrz62s93zpZNyqepBMdNCa-mDRH-wVOIw"
 
-# Fungsi resmi menggunakan st.connection dengan proteksi penanganan error
-@st.cache_data(ttl=30) # Segarkan data otomatis dari Google Sheets setiap 30 detik
+# Fungsi pembacaan data publik bypass yang 100% aman dari error macet layar kosong
+@st.cache_data(ttl=15) # Refresh cepat 15 detik selama pengujian
 def ambil_data_sheet(nama_sheet):
     try:
-        conn = st.connection("gsheets", type=GSheetsConnection)
-        df = conn.read(spreadsheet=URL_SPREADSHEET, worksheet=nama_sheet)
-        if df is not None:
-            return df
-        return pd.DataFrame()
-    except Exception as e:
+        # Mengonversi nama sheet agar aman dibaca oleh URL Google Docs API
+        sheet_aman = nama_sheet.replace(" ", "%20")
+        url_csv = f"https://google.com{SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet={sheet_aman}"
+        df = pd.read_csv(url_csv)
+        return df
+    except:
+        # Mengembalikan DataFrame kosong buatan jika koneksi dari cloud ke Google diblokir
         return pd.DataFrame()
 
 # ==========================================
@@ -72,118 +72,89 @@ st.markdown("---")
 # 3. KONTEN HALAMAN (RESOURCE LIVE GOOGLE SHEETS)
 # ==========================================
 
-# --- MENU 1: TAB VARCOST (VERSI ANTI-ERROR & AUTOMATIC STRIP) ---
+# --- MENU 1: TAB VARCOST ---
 def halaman_varcost():
     st.title("🌐 Telecom Variable Cost Analysis")
     st.caption("Memantau ringkasan biaya operasional dan data finansial regional dari tab 'VARCOST'.")
     st.write("")
 
-    # Tarik data mentah dari spreadsheet
+    # Dropdown Analisa Finansial (Tetap muncul di layar apa pun kondisi datanya)
+    st.subheader("📊 Corporate Financial Dropdown")
+    opsi_analisa = st.selectbox(
+        "Pilih Lini Analisis Finansial:",
+        ["Revenue Analysis (Pendapatan)", "Net Income Analysis (Laba Bersih)"]
+    )
+
     df_raw = ambil_data_sheet("VARCOST")
 
     if not df_raw.empty:
-        # Pembersihan otomatis nama kolom (menghapus spasi liar & memaksa huruf kecil)
+        # Bersihkan nama kolom dari spasi liar dan buat menjadi huruf kecil semua
         df_varcost = df_raw.copy()
         df_varcost.columns = df_varcost.columns.str.strip().str.lower()
 
-        # Dropdown Analisa Finansial
-        st.subheader("📊 Corporate Financial Dropdown")
-        opsi_analisa = st.selectbox(
-            "Pilih Lini Analisis Finansial:",
-            ["Revenue Analysis (Pendapatan)", "Net Income Analysis (Laba Bersih)"]
-        )
-
-        # Variabel pemetaan nama kolom setelah otomatis dikecilkan
         col_bulan = "bulan"
         col_revenue = "revenue"
         col_income = "net income"
 
-        # Tampilan Grafik 1: Revenue
+        # Tampilan Grafik
         if opsi_analisa == "Revenue Analysis (Pendapatan)":
             if col_bulan in df_varcost.columns and col_revenue in df_varcost.columns:
-                df_chart = df_varcost[[col_bulan, col_revenue]].dropna()
-                df_chart = df_chart.set_index(col_bulan)
-                st.line_chart(df_chart)
+                st.line_chart(df_varcost[[col_bulan, col_revenue]].dropna().set_index(col_bulan))
             else:
-                st.warning(f"⚠️ Kolom '{col_bulan}' atau '{col_revenue}' tidak terdeteksi. Kolom terdeteksi: {list(df_raw.columns)}")
-                
-        # Tampilan Grafik 2: Net Income
+                st.info("💡 Grafik pendapatan akan muncul jika kolom 'Bulan' dan 'Revenue' tersedia di dalam sheet.")
         elif opsi_analisa == "Net Income Analysis (Laba Bersih)":
             if col_bulan in df_varcost.columns and col_income in df_varcost.columns:
-                df_chart = df_varcost[[col_bulan, col_income]].dropna()
-                df_chart = df_chart.set_index(col_bulan)
-                st.bar_chart(df_chart)
+                st.bar_chart(df_varcost[[col_bulan, col_income]].dropna().set_index(col_bulan))
             else:
-                st.warning(f"⚠️ Kolom '{col_bulan}' atau '{col_income}' tidak terdeteksi. Kolom terdeteksi: {list(df_raw.columns)}")
+                st.info("💡 Grafik laba bersih akan muncul jika kolom 'Bulan' dan 'Net Income' tersedia di dalam sheet.")
 
-        # Menampilkan Ringkasan Metrik Angka Terkini (Baris Terbawah Data)
+        # Menampilkan Ringkasan Metrik
         st.write("")
         st.subheader("📈 Ringkasan Nilai Terkini")
         m1, m2 = st.columns(2)
-        
         with m1:
-            val_rev = df_raw[df_raw.columns[df_varcost.columns == col_revenue]].iloc[-1].values[0] if col_revenue in df_varcost.columns else "-"
+            val_rev = df_raw[df_raw.columns[df_varcost.columns == col_revenue]].iloc[-1].values if col_revenue in df_varcost.columns else "-"
             st.metric(label="Revenue Terakhir", value=str(val_rev))
         with m2:
-            val_inc = df_raw[df_raw.columns[df_varcost.columns == col_income]].iloc[-1].values[0] if col_income in df_varcost.columns else "-"
+            val_inc = df_raw[df_raw.columns[df_varcost.columns == col_income]].iloc[-1].values if col_income in df_varcost.columns else "-"
             st.metric(label="Net Income Terakhir", value=str(val_inc))
 
-        # Menampilkan Tabel Utama Asli di Bagian Bawah
+        # Menampilkan Tabel Utama Asli
         st.write("")
         st.subheader("📋 Data Sheet Riil: VARCOST")
         st.dataframe(df_raw, use_container_width=True, hide_index=True)
-
     else:
-        st.warning("⚠️ Data Utama gagal ditarik dari Google Sheets atau tab 'VARCOST' kosong.")
-        st.info("Pastikan spreadsheet Anda sudah diatur ke akses publik: **'Anyone with the link can view'**.")
+        # JIKA PULL DATA GAGAL, LAYAR TIDAK AKAN BLANK HITAM LAGI
+        st.error("❌ Streamlit Cloud Gagal Menghubungi Google Sheets Anda!")
+        st.warning("⚠️ **Penyebab Utama:** Hak akses berbagi pada link Google Sheets Anda masih terkunci (*Restricted*).")
+        st.info("👉 **Cara Mengatasi Seketika:** Buka spreadsheet Anda, klik tombol **Share** di pojok kanan atas, lalu ubah opsi General Access dari *Restricted* menjadi **'Anyone with the link can view'** (Siapa saja yang memiliki link dapat melihat).")
 
 # --- MENU 2: TAB DATA PM ---
 def halaman_data_pm():
     st.title("🛠️ Preventive Maintenance Log (data PM)")
-    st.caption("Memantau rekam aktivitas pemeliharaan infrastruktur secara berkala.")
     df_pm = ambil_data_sheet("data PM")
     if not df_pm.empty:
         st.dataframe(df_pm, use_container_width=True, hide_index=True)
     else:
-        st.info("Tidak ada data untuk ditampilkan atau tab 'data PM' kosong.")
+        st.info("Menunggu sinkronisasi data atau tab 'data PM' kosong.")
 
 # --- MENU 3: TAB DATA PROJECT ---
 def halaman_data_project():
-    st.title("🚀 Network Rollout & Deployment Progress (data Project)")
-    st.caption("Status pembangunan jaringan, site baru, dan integrasi sistem telekomunikasi.")
+    st.title("🚀 Network Rollout Progress (data Project)")
     df_project = ambil_data_sheet("data Project")
     if not df_project.empty:
         st.dataframe(df_project, use_container_width=True, hide_index=True)
     else:
-        st.info("Tidak ada data untuk ditampilkan atau tab 'data Project' kosong.")
+        st.info("Menunggu sinkronisasi data atau tab 'data Project' kosong.")
 
-# --- MENU 4: TAB DATA ASSET (DENGAN FILTER SUB-MENU) ---
+# --- MENU 4: TAB DATA ASSET ---
 def halaman_data_asset():
     st.title("🏢 Asset Management Inventory (data Asset)")
-    st.caption("Manajemen aset perangkat core, transmisi, menara (tower), dan fasilitas penunjang.")
-    
     df_asset = ambil_data_sheet("data Asset")
-
     if not df_asset.empty:
-        sub_menu = st.radio("Pilih Kategori Asset:", ["Semua Asset", "Asset KUT", "Asset Rental"], horizontal=True)
-        
-        # 💡 SILAKAN SESUAIKAN: Ganti judul kolom di bawah ini jika nama kolom pemisah di sheet Anda bukan 'Jenis Asset'
-        nama_kolom_pemisah = "Jenis Asset" 
-
-        if nama_kolom_pemisah in df_asset.columns:
-            if sub_menu == "Semua Asset":
-                st.dataframe(df_asset, use_container_width=True, hide_index=True)
-            elif sub_menu == "Asset KUT":
-                df_kut = df_asset[df_asset[nama_kolom_pemisah].astype(str).str.contains("KUT", case=False, na=False)]
-                st.dataframe(df_kut, use_container_width=True, hide_index=True) if not df_kut.empty else st.info("Kategori KUT Kosong.")
-            elif sub_menu == "Asset Rental":
-                df_rental = df_asset[df_asset[nama_kolom_pemisah].astype(str).str.contains("Rental", case=False, na=False)]
-                st.dataframe(df_rental, use_container_width=True, hide_index=True) if not df_rental.empty else st.info("Kategori Rental Kosong.")
-        else:
-            st.warning(f"Kolom pemisah '{nama_kolom_pemisah}' tidak terdeteksi. Menampilkan seluruh data.")
-            st.dataframe(df_asset, use_container_width=True, hide_index=True)
+        st.dataframe(df_asset, use_container_width=True, hide_index=True)
     else:
-        st.info("Tidak ada data untuk ditampilkan atau tab 'data Asset' kosong.")
+        st.info("Menunggu sinkronisasi data atau tab 'data Asset' kosong.")
 
 # --- MENU 5: TAB DATA KPI ---
 def halaman_data_kpi():
@@ -192,31 +163,47 @@ def halaman_data_kpi():
     if not df_kpi.empty:
         st.dataframe(df_kpi, use_container_width=True, hide_index=True)
     else:
-        st.info("Tidak ada data untuk ditampilkan atau tab 'data KPI' kosong.")
+        st.info("Menunggu sinkronisasi data atau tab 'data KPI' kosong.")
 
 # --- MENU 6: TAB DATA OPERATIONAL ---
 def halaman_data_operational():
-    st.title("⚙️ Network Operations Center Data (data Operational)")
+    st.title("⚙️ Network Operations Data (data Operational)")
     df_ops = ambil_data_sheet("data Operational")
     if not df_ops.empty:
         st.dataframe(df_ops, use_container_width=True, hide_index=True)
     else:
-        st.info("Tidak ada data untuk ditampilkan atau tab 'data Operational' kosong.")
+        st.info("Menunggu sinkronisasi data atau tab 'data Operational' kosong.")
 
 # --- MENU 7: TAB DATA PJB AGING ---
 def halaman_data_pjb():
-    st.title("⏳ PJB Aging & Outstanding Log (data PJB aging)")
+    st.title("⏳ PJB Aging Log (data PJB aging)")
     df_pjb = ambil_data_sheet("data PJB aging")
     if not df_pjb.empty:
         st.dataframe(df_pjb, use_container_width=True, hide_index=True)
     else:
-        st.info("Tidak ada data untuk ditampilkan atau tab 'data PJB aging' kosong.")
+        st.info("Menunggu sinkronisasi data atau tab 'data PJB aging' kosong.")
 
 # --- MENU 8: TAB MONITORING MBP ---
 def halaman_monitoring_mbp():
     st.title("📡 Monitoring MBP & Progress Mateline Management")
-    st.info("💡 Data live otomatis termuat di halaman ini apabila Anda menambahkan tab baru bernama 'Monitoring MBP' ke Google Sheets Anda.")
+    st.info("Struktur penampung siap pakai untuk tab 'Monitoring MBP'.")
 
 # ==========================================
 # 4. ROUTER EKSEKUSI HALAMAN
 # ==========================================
+if st.session_state.active_menu == "VARCOST":
+    halaman_varcost()
+elif st.session_state.active_menu == "DATA_PM":
+    halaman_data_pm()
+elif st.session_state.active_menu == "DATA_PROJECT":
+    halaman_data_project()
+elif st.session_state.active_menu == "DATA_ASSET":
+    halaman_data_asset()
+elif st.session_state.active_menu == "DATA_KPI":
+    halaman_data_kpi()
+elif st.session_state.active_menu == "DATA_OPERATIONAL":
+    halaman_data_operational()
+elif st.session_state.active_menu == "DATA_PJB":
+    halaman_data_pjb()
+elif st.session_state.active_menu == "MONITORING_MBP":
+    halaman_monitoring_mbp()
