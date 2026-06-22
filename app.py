@@ -1,29 +1,44 @@
 import streamlit as st
 import pandas as pd
 
-st.set_page_config(page_title="Corporate Dashboard", layout="wide", page_icon="📊")
+st.set_page_config(page_title="Corporate Dashboard", layout="wide")
 
-# --- CSS PRESISI DENGAN GAMBAR ---
 st.markdown("""
     <style>
+    /* Membuat grid container yang presisi */
+    .menu-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+        padding: 20px;
+    }
+    
+    /* Tombol dengan ukuran tetap dan desain seragam */
     div.stButton > button {
         width: 100% !important;
-        height: 150px !important; /* Tinggi seragam */
+        height: 180px !important;
         border-radius: 20px !important;
-        border: 2px solid rgba(255,255,255,0.3) !important;
+        border: 2px solid #ffffff !important;
+        background-color: #262730 !important;
         color: white !important;
-        font-size: 16px !important;
-        font-weight: 800 !important;
+        font-size: 20px !important;
+        font-weight: bold !important;
         transition: 0.3s !important;
+        /* Mengatur posisi teks di bawah gambar */
         display: flex !important;
         flex-direction: column !important;
-        justify-content: center !important;
+        justify-content: flex-end !important;
         align-items: center !important;
-        background-size: cover !important;
-        background-position: center !important;
-        text-shadow: 1px 1px 2px #000;
+        padding-bottom: 20px !important;
     }
-    div.stButton > button:hover { transform: scale(1.02); box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
+    
+    /* Memberikan efek visual gambar di dalam tombol */
+    .btn-img {
+        width: 80px;
+        height: 80px;
+        margin-bottom: 10px;
+        object-fit: contain;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -34,43 +49,37 @@ def navigate_to(page_name):
 if 'current_page' not in st.session_state: st.session_state.current_page = "Halaman Depan"
 
 if st.session_state.current_page == "Halaman Depan":
-    st.title("✨ Dashboard Kinarya Utama Teknik")
-    st.markdown("---")
+    st.title("Dashboard Kinarya Utama Teknik")
     
-    # Daftar menu dengan link gambar (bisa diganti URL gambar Anda sendiri)
-    # Gunakan gambar ikon/background yang simpel agar teks tetap terbaca
+    # URL gambar Anda
+    img_url = "https://img.freepik.com/free-vector/team-goals-concept-illustration_114360-5290.jpg"
+    
     menus = [
-        ("Varcost", "Monitoring Varcost", "https://img.freepik.com/free-vector/finance-concept-illustration_114360-3944.jpg"),
-        ("KPI", "Monitoring KPI", "https://img.freepik.com/free-vector/target-marketing-concept-illustration_114360-3793.jpg"),
-        ("Maintenance", "Monitoring Preventive Maintenance", "https://img.freepik.com/free-vector/mechanic-working-car-concept-illustration_114360-1490.jpg"),
-        ("Asset", "Monitoring Asset", "https://img.freepik.com/free-vector/inventory-management-concept-illustration_114360-3843.jpg"),
-        ("Project", "Monitoring Project", "https://img.freepik.com/free-vector/project-management-concept-illustration_114360-2374.jpg"),
-        ("Operational", "Monitoring Operational", "https://img.freepik.com/free-vector/fuel-pump-concept-illustration_114360-3840.jpg")
+        ("Varcost", "Monitoring Varcost"), ("KPI", "Monitoring KPI"), 
+        ("Maintenance", "Monitoring Preventive Maintenance"), ("Asset", "Monitoring Asset"),
+        ("Project", "Monitoring Project"), ("Operational", "Monitoring Operational")
     ]
     
+    # Membuat Grid
+    st.markdown('<div class="menu-grid">', unsafe_allow_html=True)
+    
+    # Kita buat kolom manual untuk menampung button Streamlit
     cols = st.columns(3)
-    for i, (label, target, img_url) in enumerate(menus):
-        # Mengatur background gambar per tombol melalui CSS injeksi
-        st.markdown(f"""
-            <style>
-            div.stButton:nth-child({i+1}) > button {{
-                background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('{img_url}') !important;
-            }}
-            </style>
-        """, unsafe_allow_html=True)
-        
+    for i, (label, target) in enumerate(menus):
         with cols[i % 3]:
-            if st.button(label): navigate_to(target)
-            st.write("") # Spacer
+            # Menampilkan gambar sebelum tombol agar presisi
+            st.image(img_url, width=100)
+            if st.button(label, key=label):
+                navigate_to(target)
+    
+    st.markdown('</div>', unsafe_allow_html=True)
 
 elif st.session_state.current_page == "Monitoring Asset":
-    st.title("🏢 Monitoring Asset")
+    st.title("Monitoring Asset")
     if st.button("⬅ Kembali"): navigate_to("Halaman Depan")
-    tab1, tab2 = st.tabs(["📦 Asset KUT", "🏗️ Asset Rental"])
+    tab1, tab2 = st.tabs(["Asset KUT", "Asset Rental"])
     with tab1: st.write("Data Asset KUT")
     with tab2: st.write("Data Asset Rental")
-
 else:
-    st.title(f"📊 {st.session_state.current_page}")
+    st.title(st.session_state.current_page)
     if st.button("⬅ Kembali"): navigate_to("Halaman Depan")
-    st.write(f"Konten untuk {st.session_state.current_page} sedang disiapkan.")
