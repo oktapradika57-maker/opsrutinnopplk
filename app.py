@@ -1,7 +1,8 @@
 import streamlit as st
 import pandas as pd
+import gspread
+from google.oauth2.service_account import Credentials
 import streamlit.components.v1 as components
-import urllib.parse
 
 # 1. Konfigurasi Halaman & Tema Gelap Ops Center
 st.set_page_config(
@@ -16,35 +17,44 @@ if "active_menu" not in st.session_state:
 if "play_sound" not in st.session_state:
     st.session_state.play_sound = False
 
-# ID Spreadsheet Utama Anda (Dihasilkan dari link publik Database Reg Kalimantan Anda)
+# ID Spreadsheet Utama Anda (Database Reg Kalimantan)
 SPREADSHEET_ID = "1hIeT51_SVdNrz62s93zpZNyqepBMdNCa-mDRH-wVOIw"
 
-# 🔊 FUNGSI EFEK SUARA KLIK (Audio HTML JavaScript)
+# 🔊 FUNGSI EFEK SUARA KLIK
 def putar_suara_klik():
     sound_url = "https://soundjay.com"
     html_code = f"""
-    <audio autoplay hidden>
-        <source src="{sound_url}" type="audio/mp3">
-    </audio>
+    <audio autoplay hidden><source src="{sound_url}" type="audio/mp3"></audio>
     """
     components.html(html_code, height=0, width=0)
 
-# Jalankan efek suara jika dipicu oleh penekanan tombol
 if st.session_state.play_sound:
     putar_suara_klik()
-    st.session_state.play_sound = False # Reset state suara
+    st.session_state.play_sound = False
 
-# 🌐 FUNGSI: Membaca Google Sheet via URL Export CSV (Aman dari Masalah Spasi & Huruf Besar/Kecil)
-@st.cache_data(ttl=5) # Cache dipangkas menjadi 5 detik untuk pengetesan realtime Anda
+# 🔐 KONEKSI UTAMA API GOOGLE (Menggunakan gspread resmi)
+@st.cache_data(ttl=10) # Data disimpan di memori selama 10 detik agar sinkronisasi instan
 def ambil_data_sheet(nama_sheet):
     try:
-        # Mengubah teks nama sheet agar aman bagi URL (contoh: 'data SVA' menjadi 'data%20SVA')
-        sheet_encoded = urllib.parse.quote(nama_sheet)
-        url_csv = f"https://google.com{SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet={sheet_encoded}"
-        df = pd.read_csv(url_csv)
+        # Menentukan hak akses ruang lingkup API Google Drive dan Sheets
+        scopes = [
+            "https://googleapis.com",
+            "https://googleapis.com"
+        ]
+        # Membaca berkas kunci rahasia yang disimpan sejajar dengan file app.py
+        kredensial = Credentials.from_service_account_file("creds.json", scopes=scopes)
+        klien = gspread.authorize(kredensial)
+        
+        # Membuka spreadsheet berdasarkan ID fisik dan nama tabnya
+        buka_file = klien.open_by_key(SPREADSHEET_ID)
+        lembar_kerja = buka_file.worksheet(nama_sheet)
+        
+        # Mengambil semua rekaman baris data dan mengubahnya menjadi Pandas DataFrame
+        data_rows = lembar_kerja.get_all_records()
+        df = pd.DataFrame(data_rows)
         return df
     except Exception as e:
-        st.sidebar.error(f"Error Jaringan Sheet '{nama_sheet}': {e}")
+        st.sidebar.error(f"Gagal memuat API tab '{nama_sheet}': {e}")
         return pd.DataFrame()
 
 # ==========================================
@@ -54,60 +64,43 @@ col1, col2, col3, col4, col5, col6, col7, col8, col_ref = st.columns([1, 1, 1, 1
 
 with col1:
     if st.button("💰\n\nVARCOST", use_container_width=True, key="btn_varcost"):
-        st.session_state.active_menu = "VARCOST"
-        st.session_state.play_sound = True
-        st.rerun()
+        st.session_state.active_menu = "VARCOST"; st.session_state.play_sound = True; st.rerun()
 with col2:
     if st.button("🛠️\n\nDATA PM", use_container_width=True, key="btn_pm"):
-        st.session_state.active_menu = "DATA_PM"
-        st.session_state.play_sound = True
-        st.rerun()
+        st.session_state.active_menu = "DATA_PM"; st.session_state.play_sound = True; st.rerun()
 with col3:
     if st.button("🚀\n\nDATA PROJECT", use_container_width=True, key="btn_project"):
-        st.session_state.active_menu = "DATA_PROJECT"
-        st.session_state.play_sound = True
-        st.rerun()
+        st.session_state.active_menu = "DATA_PROJECT"; st.session_state.play_sound = True; st.rerun()
 with col4:
     if st.button("🏢\n\nDATA ASSET", use_container_width=True, key="btn_asset"):
-        st.session_state.active_menu = "DATA_ASSET"
-        st.session_state.play_sound = True
-        st.rerun()
+        st.session_state.active_menu = "DATA_ASSET"; st.session_state.play_sound = True; st.rerun()
 with col5:
     if st.button("📈\n\nDATA KPI", use_container_width=True, key="btn_kpi"):
-        st.session_state.active_menu = "DATA_KPI"
-        st.session_state.play_sound = True
-        st.rerun()
+        st.session_state.active_menu = "DATA_KPI"; st.session_state.play_sound = True; st.rerun()
 with col6:
     if st.button("⚙️\n\nDATA OPERATIONAL", use_container_width=True, key="btn_operational"):
-        st.session_state.active_menu = "DATA_OPERATIONAL"
-        st.session_state.play_sound = True
-        st.rerun()
+        st.session_state.active_menu = "DATA_OPERATIONAL"; st.session_state.play_sound = True; st.rerun()
 with col7:
     if st.button("⏳\n\nDATA PJB AGING", use_container_width=True, key="btn_pjb"):
-        st.session_state.active_menu = "DATA_PJB"
-        st.session_state.play_sound = True
-        st.rerun()
+        st.session_state.active_menu = "DATA_PJB"; st.session_state.play_sound = True; st.rerun()
 with col8:
     if st.button("📡\n\nMONITORING MBP", use_container_width=True, key="btn_mbp"):
-        st.session_state.active_menu = "MONITORING_MBP"
-        st.session_state.play_sound = True
-        st.rerun()
+        st.session_state.active_menu = "MONITORING_MBP"; st.session_state.play_sound = True; st.rerun()
 with col_ref:
     if st.button("🔄\n\nREFRESH DATA", use_container_width=True, key="btn_refresh_all", type="primary"):
-        st.cache_data.clear() 
-        st.session_state.play_sound = True
-        st.toast("Memperbarui seluruh data langsung dari Google Sheets...", icon="🔄")
+        st.cache_data.clear(); st.session_state.play_sound = True
+        st.toast("Memperbarui seluruh data via API Google...", icon="🔄")
         st.rerun()
 
 st.markdown("---")
 
 # ==========================================
-# 3. KONTEN HALAMAN (RESOURCE LIVE GOOGLE SHEETS)
+# 3. KONTEN HALAMAN (RESOURCE LIVE GOOGLE API)
 # ==========================================
 
 def halaman_varcost():
     st.title("🌐 Telecom Variable Cost Analysis")
-    st.caption("Memantau ringkasan biaya operasional wilayah Kalimantan langsung dari Google Sheets.")
+    st.caption("Memantau ringkasan biaya operasional wilayah Kalimantan langsung dari Google Sheets API.")
     st.write("")
 
     st.subheader("📊 Corporate Financial Dropdown")
@@ -116,18 +109,16 @@ def halaman_varcost():
         ["Revenue Analysis (Pendapatan)", "Net Income Analysis (Laba Bersih)"]
     )
 
-    # Memuat data live dari sheet 'data SVA'
+    # Memuat data live aman menggunakan gspread dari sheet 'data SVA'
     df_sva = ambil_data_sheet("data SVA")
 
     if not df_sva.empty:
-        # Bersihkan nama kolom dari spasi liar di Google Sheets
         df_sva.columns = df_sva.columns.str.strip()
-        
         try:
-            # Berdasarkan instruksi Anda: Kolom F (Revenue) ke-5, Kolom G (Bulan) ke-6, Kolom T (Net Income) ke-19
-            col_revenue = df_sva.columns[5]   # Kolom F
-            col_bulan = df_sva.columns[6]     # Kolom G
-            col_income = df_sva.columns[19]   # Kolom T
+            # Sesuai instruksi Anda: Kolom F (Revenue) ke-5, Kolom G (Bulan) ke-6, Kolom T (Net Income) ke-19
+            col_revenue = df_sva.columns[5]
+            col_bulan = df_sva.columns[6]
+            col_income = df_sva.columns[19]
 
             if opsi_analisa == "Revenue Analysis (Pendapatan)":
                 st.info(f"📈 **Tren Revenue Bulanan (Sumber: data SVA - Kolom {col_revenue})**")
@@ -143,19 +134,17 @@ def halaman_varcost():
         except Exception as err:
             st.error(f"Gagal memetakan posisi kolom fisik F, G, T pada tab 'data SVA': {err}")
     else:
-        st.info("💡 Grafik finansial akan muncul setelah tab 'data SVA' berhasil ditarik.")
+        st.info("💡 Grafik finansial akan muncul setelah koneksi API Google Sheets 'data SVA' berhasil terhubung.")
 
     st.markdown("---")
 
     # Menampilkan Tabel Utama 'VARCOST'
-    st.subheader("📋 Data Sheet Riil: data SVA")
-    if not df_sva.empty:
-        st.dataframe(df_sva, use_container_width=True, hide_index=True)
+    st.subheader("📋 Data Sheet Riil: VARCOST")
+    df_varcost = ambil_data_sheet("VARCOST")
+    if not df_varcost.empty:
+        st.dataframe(df_varcost, use_container_width=True, hide_index=True)
     else:
-        st.warning("Data tabel 'data SVA' kosong atau sedang memuat.")
-        if st.button("⚡ Tarik Ulang Koneksi Google Sheets Now", key="btn_retry_internal"):
-            st.cache_data.clear()
-            st.rerun()
+        st.error("Tabel 'VARCOST' gagal dimuat via API. Pastikan file 'creds.json' sudah di-upload ke GitHub Anda.")
 
 # --- HALAMAN LAINNYA ---
 def halaman_data_pm():
