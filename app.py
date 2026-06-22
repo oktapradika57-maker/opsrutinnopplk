@@ -1,76 +1,65 @@
 import streamlit as st
 
-st.set_page_config(page_title="Dashboard Profesional", layout="wide")
+# 1. Konfigurasi Halaman (Mengaktifkan layout melebar/wide)
+st.set_page_config(
+    page_title="Corporate Dashboard", 
+    layout="wide", 
+    initial_sidebar_state="collapsed"
+)
 
-# --- CSS PROFESIONAL (GLASSMORPHISM) ---
-st.markdown("""
-    <style>
-    .dashboard-container {
-        display: flex;
-        justify-content: space-between;
-        gap: 20px;
-        margin-top: 30px;
-        flex-wrap: wrap;
-    }
-    .menu-item {
-        flex: 1;
-        min-width: 140px;
-        height: 160px;
-        background: rgba(255, 255, 255, 0.05);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 20px;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        transition: all 0.3s ease;
-        text-decoration: none;
-        color: white;
-        cursor: pointer;
-    }
-    .menu-item:hover {
-        background: rgba(108, 99, 255, 0.2);
-        border-color: #6c63ff;
-        transform: translateY(-10px);
-        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    }
-    .icon { font-size: 40px; margin-bottom: 10px; }
-    .label { font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
-    </style>
-""", unsafe_allow_html=True)
+# 2. Judul Dasbor (Opsional)
+st.title("📊 Enterprise Analytics Dashboard")
+st.markdown("---")
 
-def navigate_to(page_name):
-    st.session_state.current_page = page_name
-    st.rerun()
+# 3. Membuat Susunan Grid Menu yang Presisi (6 Kolom Sesuai Jumlah Menu)
+# Menggunakan st.columns agar tombol berjejer rapi ke samping secara otomatis
+col1, col2, col3, col4, col5, col6 = st.columns(6)
 
-if 'current_page' not in st.session_state: st.session_state.current_page = "Halaman Depan"
+# Menu 1: VARCOST
+with col1:
+    if st.button("💰\n\nVARCOST", use_container_width=True):
+        st.session_state.active_menu = "VARCOST"
 
-if st.session_state.current_page == "Halaman Depan":
-    st.title("✨ Kinarya Utama Teknik Dashboard")
-    st.markdown("---")
-    
-    menus = [
-        ("💰", "VARCOST"), ("🎯", "KPI"), ("🔧", "MAINTENANCE"),
-        ("🏢", "ASSET"), ("🚀", "PROJECT"), ("⚙️", "OPERATIONAL")
-    ]
-    
-    # Membuat baris menu
-    st.markdown('<div class="dashboard-container">', unsafe_allow_html=True)
-    
-    # Kita gunakan kolom kosong atau loop untuk membuat elemen yang bisa diklik
-    # Agar bisa diklik di Streamlit, kita gunakan st.button dalam bentuk tombol transparan
-    # yang ditaruh di atas div kartu (ini teknik rahasia desain web)
-    
-    cols = st.columns(6)
-    for i, (icon, label) in enumerate(menus):
-        with cols[i]:
-            # Membuat area kartu yang bisa diklik
-            if st.button(f"{icon}\n\n{label}", key=label):
-                navigate_to(f"Monitoring {label.capitalize()}")
-    
-    st.markdown('</div>', unsafe_allow_html=True)
+# Menu 2: KPI
+with col2:
+    if st.button("📈\n\nKPI", use_container_width=True):
+        st.session_state.active_menu = "KPI"
 
-elif st.session_state.current_page.startswith("Monitoring"):
-    st.title(f"📊 {st.session_state.current_page}")
-    if st.button("⬅ Kembali"): navigate_to("Halaman Depan")
+# Menu 3: MAINTENANCE
+with col3:
+    if st.button("🛠️\n\nMAINTENANCE", use_container_width=True):
+        st.session_state.active_menu = "MAINTENANCE"
+
+# Menu 4: ASSET
+with col4:
+    if st.button("🏢\n\nASSET", use_container_width=True):
+        st.session_state.active_menu = "ASSET"
+
+# Menu 5: PROJECT
+with col5:
+    if st.button("🚀\n\nPROJECT", use_container_width=True):
+        st.session_state.active_menu = "PROJECT"
+
+# Menu 6: OPERATIONAL (Ejaan sudah diperbaiki)
+with col6:
+    if st.button("⚙️\n\nOPERATIONAL", use_container_width=True):
+        st.session_state.active_menu = "OPERATIONAL"
+
+st.markdown("---")
+
+# 4. Logika Konten (Menampilkan halaman sesuai menu yang diklik)
+if "active_menu" not in st.session_state:
+    st.session_state.active_menu = "VARCOST" # Menu default saat pertama buka
+
+st.subheader(f"Halaman: {st.session_state.active_menu}")
+
+# Contoh visualisasi konten berdasarkan menu aktif
+if st.session_state.active_menu == "VARCOST":
+    st.info("Menampilkan metrik Variable Cost (Biaya Variabel)...")
+    # Anda bisa memasukkan grafik/tabel data Anda di sini
+    
+elif st.session_state.active_menu == "KPI":
+    st.success("Menampilkan indikator Key Performance Indicator...")
+    
+elif st.session_state.active_menu == "MAINTENANCE":
+    st.warning("Menampilkan jadwal dan status Pemeliharaan Aset...")
