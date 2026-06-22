@@ -2,7 +2,7 @@ import streamlit as st
 
 st.set_page_config(page_title="Dashboard KUT", layout="wide")
 
-# --- CSS KARTU DIBUAT LEBAR KOTAKNYA SAMA ---
+# --- CSS PRESISI MENGGUNAKAN GRID ---
 st.markdown("""
     <style>
     .grid-wrapper {
@@ -12,11 +12,10 @@ st.markdown("""
         margin-top: 20px;
     }
     .menu-box {
-        height: 2000px;
-        width : 1000px;
+        height: 250px;
         background: #262730;
         border-radius: 20px;
-        border: 200px solid #444;
+        border: 2px solid #444;
         display: flex;
         flex-direction: column;
         justify-content: center;
@@ -47,7 +46,12 @@ if st.session_state.current_page == "Halaman Depan":
     st.markdown("---")
     
     menus = [
-  )
+        ("💰", "VARCOST", "Monitoring Varcost"),
+        ("🎯", "KPI", "Monitoring KPI"),
+        ("🔧", "MAINTENANCE", "Monitoring Maintenance"),
+        ("🏢", "ASSET", "Monitoring Asset"),
+        ("🚀", "PROJECT", "Monitoring Project"),
+        ("⚙️", "OPERATIONAL", "Monitoring Operational")
     ]
     
     # Render Grid
