@@ -4,7 +4,7 @@ from streamlit_gsheets import GSheetsConnection
 
 # 1. Konfigurasi Halaman & Tema Gelap ala Telco Ops Center
 st.set_page_config(
-    page_title="Telco Corporate Dashboard", 
+    page_title="PT Kinarya Utama Teknik Dashboard", 
     layout="wide", 
     initial_sidebar_state="collapsed"
 )
@@ -73,7 +73,7 @@ st.markdown("---")
 
 # --- HALAMAN UTAMA (VARCOST TELCO + DROPDOWN ANALISA FINANSIAL) ---
 def halaman_varcost():
-    st.title("🌐 Telecom Variable Cost & Financial Analysis")
+    st.title("🌐 KUT Variable Cost & Financial Analysis")
     st.caption("Memantau data keuangan dan fluktuasi biaya operasional wilayah Kalimantan langsung dari Google Sheets.")
     st.write("")
 
