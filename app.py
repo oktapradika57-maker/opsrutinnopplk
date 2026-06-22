@@ -12,17 +12,16 @@ st.set_page_config(
 if "active_menu" not in st.session_state:
     st.session_state.active_menu = "VARCOST"
 
-# ID Spreadsheet Utama Anda (Dihasilkan langsung dari link Database Reg Kalimantan)
+# ID Spreadsheet Utama (Dihasilkan dari link publik Database Reg Kalimantan Anda)
 SPREADSHEET_ID = "1hIeT51_SVdNrz62s93zpZNyqepBMdNCa-mDRH-wVOIw"
 
-# Fungsi pembacaan data publik bypass menggunakan pandas read_csv (100% Stabil & Bebas Hambatan Jaringan)
-@st.cache_data(ttl=30)
+# Fungsi pembacaan data publik bypass yang aman dari pemblokiran DNS
+@st.cache_data(ttl=30) # Refresh otomatis setiap 30 detik
 def ambil_data_sheet(nama_sheet):
     try:
         sheet_aman = nama_sheet.replace(" ", "%20")
-        url_csv = f"https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet={sheet_aman}"
-        # Membaca baris kedua (index baris 1) sebagai header jika baris pertama berupa merge-cell/title
-        df = pd.read_csv(url_csv, header=1)
+        url_csv = f"https://google.com{SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet={sheet_aman}"
+        df = pd.read_csv(url_csv)
         return df
     except:
         return pd.DataFrame()
@@ -71,18 +70,11 @@ st.markdown("---")
 # 3. KONTEN HALAMAN (RESOURCE LIVE GOOGLE SHEETS)
 # ==========================================
 
-# --- MENU 1: TAB VARCOST ---
+# --- MENU 1: TAB VARCOST (MENGAMBIL GRAFIK DARI SHEET data SVA) ---
 def halaman_varcost():
     st.title("🌐 Telecom Variable Cost Analysis")
-    st.caption("Memantau ringkasan biaya operasional dan data finansial regional dari tab 'data SVA / VARCOST'.")
+    st.caption("Memantau ringkasan biaya operasional wilayah Kalimantan langsung dari Google Sheets.")
     st.write("")
-
-    # Membaca lembar kerja pertama yang berisi ringkasan finansial utama Anda
-    df_raw = ambil_data_sheet("data SVA")
-
-    # Jika "data SVA" tidak merespon, gunakan fallback ke nama alternatif "VARCOST"
-    if df_raw.empty:
-        df_raw = ambil_data_sheet("VARCOST")
 
     # Dropdown Analisa Finansial
     st.subheader("📊 Corporate Financial Dropdown")
@@ -91,58 +83,57 @@ def halaman_varcost():
         ["Revenue Analysis (Pendapatan)", "Net Income Analysis (Laba Bersih)"]
     )
 
-    if not df_raw.empty:
-        # Bersihkan spasi kosong di nama-nama kolom spreadsheet
-        df_varcost = df_raw.copy()
-        df_varcost.columns = df_varcost.columns.str.strip()
+    # Memuat data dari sheet 'data SVA' untuk visualisasi grafik finansial
+    df_sva = ambil_data_sheet("data SVA")
 
-        # Pemetaan berdasarkan nama kolom asli di Google Sheets Anda
-        col_bulan = "Bulan"
-        col_revenue = "Nilai Revenue"
-        col_income = "Net Income"
+    if not df_sva.empty:
+        # Pemetaan berdasarkan posisi indeks kolom (A=0, B=1, C=2, D=3, E=4, F=5, G=6, ..., T=19)
+        # Kolom F (Revenue) -> indeks 5
+        # Kolom G (Bulan)   -> indeks 6
+        # Kolom T (Net Income) -> indeks 19
+        
+        try:
+            # Mengambil nama kolom asli berdasarkan urutan alfabet di spreadsheet Anda
+            nama_col_revenue = df_sva.columns[5]   # Kolom F
+            nama_col_bulan = df_sva.columns[6]     # Kolom G
+            nama_col_income = df_sva.columns[19]   # Kolom T
 
-        # Fungsi konversi data teks ke angka finansial agar grafik berfungsi
-        for col in [col_revenue, col_income]:
-            if col in df_varcost.columns:
-                df_varcost[col] = df_varcost[col].astype(str).str.replace('.', '', regex=False)
-                df_varcost[col] = pd.to_numeric(df_varcost[col], errors='coerce').fillna(0)
-
-        # Tampilan Grafik 1: Revenue
-        if opsi_analisa == "Revenue Analysis (Pendapatan)":
-            if col_bulan in df_varcost.columns and col_revenue in df_varcost.columns:
-                # Ambil baris data yang valid, kumpulkan berdasarkan grup bulan
-                df_chart = df_varcost[[col_bulan, col_revenue]].dropna()
-                df_grouped = df_chart.groupby(col_bulan).sum()
-                st.line_chart(df_grouped)
-            else:
-                st.warning(f"Kolom '{col_bulan}' atau '{col_revenue}' tidak cocok. Kolom terdeteksi: {list(df_raw.columns)}")
+            # Tampilan Grafik 1: Revenue
+            if opsi_analisa == "Revenue Analysis (Pendapatan)":
+                st.info(f"📈 **Tren Revenue Bulanan (Sumber: data SVA - Kolom {nama_col_revenue})**")
+                df_chart = df_sva[[nama_col_bulan, nama_col_revenue]].dropna()
+                df_chart = df_chart.set_index(nama_col_bulan)
+                st.line_chart(df_chart)
                 
-        # Tampilan Grafik 2: Net Income
-        elif opsi_analisa == "Net Income Analysis (Laba Bersih)":
-            if col_bulan in df_varcost.columns and col_income in df_varcost.columns:
-                df_chart = df_varcost[[col_bulan, col_income]].dropna()
-                df_grouped = df_chart.groupby(col_bulan).sum()
-                st.bar_chart(df_grouped)
-            else:
-                st.warning(f"Kolom '{col_bulan}' atau '{col_income}' tidak cocok. Kolom terdeteksi: {list(df_raw.columns)}")
+                # Metrik nilai terkini (baris terakhir)
+                val_rev = df_sva[nama_col_revenue].iloc[-1]
+                st.metric(label="Revenue Periode Terakhir", value=str(val_rev))
 
-        # Menampilkan Ringkasan Metrik Finansial Akumulatif
-        st.write("")
-        st.subheader("📈 Ringkasan Nilai Finansial")
-        m1, m2 = st.columns(2)
-        with m1:
-            total_rev_sum = df_varcost[col_revenue].sum() if col_revenue in df_varcost.columns else 0
-            st.metric(label="Total Kumulatif Revenue", value=f"IDR {total_rev_sum:,.0f}")
-        with m2:
-            total_inc_sum = df_varcost[col_income].sum() if col_income in df_varcost.columns else 0
-            st.metric(label="Total Kumulatif Net Income", value=f"IDR {total_inc_sum:,.0f}")
+            # Tampilan Grafik 2: Net Income
+            elif opsi_analisa == "Net Income Analysis (Laba Bersih)":
+                st.success(f"💰 **Tren Net Income Bulanan (Sumber: data SVA - Kolom {nama_col_income})**")
+                df_chart = df_sva[[nama_col_bulan, nama_col_income]].dropna()
+                df_chart = df_chart.set_index(nama_col_bulan)
+                st.bar_chart(df_chart)
+                
+                # Metrik nilai terkini (baris terakhir)
+                val_inc = df_sva[nama_col_income].iloc[-1]
+                st.metric(label="Net Income Periode Terakhir", value=str(val_inc))
 
-        # Menampilkan Tabel Utama Asli
-        st.write("")
-        st.subheader("📋 Seluruh Data Sheet Riil")
-        st.dataframe(df_raw, use_container_width=True, hide_index=True)
+        except IndexError:
+            st.warning("⚠️ Struktur kolom pada sheet 'data SVA' kurang dari 20 kolom (Kolom T tidak terjangkau). Menampilkan data apa adanya.")
     else:
-        st.warning("⚠️ Koneksi berhasil terhubung tetapi lembar kerja spreadsheet kosong atau nama tab tidak sesuai.")
+        st.info("💡 Grafik finansial akan muncul secara otomatis setelah tab 'data SVA' tersinkronisasi.")
+
+    st.markdown("---")
+
+    # Menampilkan Tabel Utama dari sheet VARCOST asli di bagian bawah
+    st.subheader("📋 Data Sheet Riil: VARCOST")
+    df_varcost = ambil_data_sheet("VARCOST")
+    if not df_varcost.empty:
+        st.dataframe(df_varcost, use_container_width=True, hide_index=True)
+    else:
+        st.warning("Data tabel 'VARCOST' kosong atau sedang memuat.")
 
 # --- MENU 2: TAB DATA PM ---
 def halaman_data_pm():
@@ -162,29 +153,12 @@ def halaman_data_project():
     else:
         st.info("Menunggu sinkronisasi data atau tab 'data Project' kosong.")
 
-# --- MENU 4: TAB DATA ASSET (DENGAN SUB-MENU KUT & RENTAL) ---
+# --- MENU 4: TAB DATA ASSET ---
 def halaman_data_asset():
     st.title("🏢 Asset Management Inventory (data Asset)")
     df_asset = ambil_data_sheet("data Asset")
-    
     if not df_asset.empty:
-        sub_menu = st.radio("Pilih Kategori Asset:", ["Semua Asset", "Asset KUT", "Asset Rental"], horizontal=True)
-        st.write("")
-        
-        # Bersihkan nama kolom asset dari spasi liar
-        df_asset.columns = df_asset.columns.str.strip()
-        
-        # Menganalisis kolom pertama sebagai filter kata kunci kategori asset
-        col_filter = df_asset.columns[0] 
-        
-        if sub_menu == "Semua Asset":
-            st.dataframe(df_asset, use_container_width=True, hide_index=True)
-        elif sub_menu == "Asset KUT":
-            df_kut = df_asset[df_asset[col_filter].astype(str).str.contains("KUT", case=False, na=False)]
-            st.dataframe(df_kut, use_container_width=True, hide_index=True) if not df_kut.empty else st.info("Kategori Asset KUT belum ditemukan.")
-        elif sub_menu == "Asset Rental":
-            df_rental = df_asset[df_asset[col_filter].astype(str).str.contains("Rental", case=False, na=False)]
-            st.dataframe(df_rental, use_container_width=True, hide_index=True) if not df_rental.empty else st.info("Kategori Asset Rental belum ditemukan.")
+        st.dataframe(df_asset, use_container_width=True, hide_index=True)
     else:
         st.info("Menunggu sinkronisasi data atau tab 'data Asset' kosong.")
 
@@ -218,7 +192,7 @@ def halaman_data_pjb():
 # --- MENU 8: TAB MONITORING MBP ---
 def halaman_monitoring_mbp():
     st.title("📡 Monitoring MBP & Progress Mateline Management")
-    st.info("Struktur monitoring ketersediaan daya cadangan (Mobile Backup Power) siap disinkronisasikan.")
+    st.info("Struktur penampung siap pakai untuk memantau modul operasional lapangan tambahan.")
 
 # ==========================================
 # 4. ROUTER EKSEKUSI HALAMAN
@@ -227,3 +201,15 @@ if st.session_state.active_menu == "VARCOST":
     halaman_varcost()
 elif st.session_state.active_menu == "DATA_PM":
     halaman_data_pm()
+elif st.session_state.active_menu == "DATA_PROJECT":
+    halaman_data_project()
+elif st.session_state.active_menu == "DATA_ASSET":
+    halaman_data_asset()
+elif st.session_state.active_menu == "DATA_KPI":
+    halaman_data_kpi()
+elif st.session_state.active_menu == "DATA_OPERATIONAL":
+    halaman_data_operational()
+elif st.session_state.active_menu == "DATA_PJB":
+    halaman_data_pjb()
+elif st.session_state.active_menu == "MONITORING_MBP":
+    halaman_monitoring_mbp()
