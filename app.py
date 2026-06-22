@@ -1,10 +1,10 @@
 import streamlit as st
 import pandas as pd
-from streamlit_gsheets import GSheetsConnection
+import urllib.parse
 
 # 1. Konfigurasi Halaman & Tema Gelap ala Telco Ops Center
 st.set_page_config(
-    page_title="PT Kinarya Utama Teknik Dashboard", 
+    page_title="Telco Corporate Dashboard", 
     layout="wide", 
     initial_sidebar_state="collapsed"
 )
@@ -13,15 +13,17 @@ st.set_page_config(
 if "active_menu" not in st.session_state:
     st.session_state.active_menu = "VARCOST"
 
-# Tautan Spreadsheet Utama Anda (Database Reg Kalimantan)
-URL_SPREADSHEET = "https://docs.google.com/spreadsheets/d/1hIeT51_SVdNrz62s93zpZNyqepBMdNCa-mDRH-wVOIw/edit?usp=sharing"
+# ID Spreadsheet Utama Anda (Database Reg Kalimantan)
+SPREADSHEET_ID = "1hIeT51_SVdNrz62s93zpZNyqepBMdNCa-mDRH-wVOIw"
 
-# Fungsi untuk membaca data dari Sheet tertentu secara efisien (menggunakan cache)
+# Fungsi membaca Google Sheet publik menggunakan metode export CSV yang aman dari karakter spasi
 @st.cache_data(ttl=60)  # Segarkan data otomatis setiap 60 detik
 def ambil_data_sheet(nama_sheet):
     try:
-        conn = st.connection("gsheets", type=GSheetsConnection)
-        df = conn.read(spreadsheet=URL_SPREADSHEET, worksheet=nama_sheet)
+        # Mengubah karakter spasi menjadi format URL-safe (contoh: 'data Operational' -> 'data%20Operational')
+        sheet_encoded = urllib.parse.quote(nama_sheet)
+        url = f"https://google.com{SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet={sheet_encoded}"
+        df = pd.read_csv(url)
         return df
     except Exception as e:
         st.error(f"Gagal memuat sheet '{nama_sheet}': {e}")
@@ -73,7 +75,7 @@ st.markdown("---")
 
 # --- HALAMAN UTAMA (VARCOST TELCO + DROPDOWN ANALISA FINANSIAL) ---
 def halaman_varcost():
-    st.title("🌐 KUT Variable Cost & Financial Analysis")
+    st.title("🌐 Telecom Variable Cost & Financial Analysis")
     st.caption("Memantau data keuangan dan fluktuasi biaya operasional wilayah Kalimantan langsung dari Google Sheets.")
     st.write("")
 
@@ -91,12 +93,11 @@ def halaman_varcost():
         r1, r2 = st.columns(2)
         with r1:
             st.info("📈 **Tren Pendapatan Terbaca**")
-            # Memastikan struktur kolom terhindar dari galat sintaksis kamus data
             if not df_varcost.empty and 'Bulan' in df_varcost.columns and 'Revenue' in df_varcost.columns:
                 data_rev = df_varcost.set_index('Bulan')[['Revenue']]
                 st.line_chart(data_rev)
             else:
-                st.warning("Menunggu data matriks berskala dengan struktur kolom 'Bulan' dan 'Revenue' di sheet 'Monitoring Varcost'.")
+                st.warning("Menunggu ketersediaan data dengan nama kolom 'Bulan' dan 'Revenue' di sheet Anda.")
         with r2:
             total_rev = df_varcost['Revenue'].iloc[-1] if not df_varcost.empty and 'Revenue' in df_varcost.columns else "-"
             st.metric(label="Total Revenue Terkini", value=str(total_rev))
@@ -109,7 +110,7 @@ def halaman_varcost():
                 data_inc = df_varcost.set_index('Bulan')[['Net Income']]
                 st.bar_chart(data_inc)
             else:
-                st.warning("Menunggu data matriks berskala dengan struktur kolom 'Bulan' dan 'Net Income' di sheet 'Monitoring Varcost'.")
+                st.warning("Menunggu ketersediaan data dengan nama kolom 'Bulan' dan 'Net Income' di sheet Anda.")
         with i2:
             npm = df_varcost['NPM'].iloc[-1] if not df_varcost.empty and 'NPM' in df_varcost.columns else "-"
             st.metric(label="Net Profit Margin (NPM)", value=str(npm))
@@ -172,7 +173,7 @@ def halaman_monitoring_mbp():
     if not df_mbp.empty:
         st.dataframe(df_mbp, use_container_width=True, hide_index=True)
     else:
-        st.info("Silakan buat lembar kerja bernama 'Monitoring MBP' di spreadsheet Anda untuk menampilkan tabel otomatis.")
+        st.info("Menampilkan baris data dari sheet 'Monitoring MBP'.")
 
 # --- HALAMAN PROGRESS MATELINE ---
 def halaman_progress_mateline():
@@ -187,7 +188,7 @@ def halaman_progress_mateline():
         else:
             st.dataframe(df_mateline, use_container_width=True, hide_index=True)
     else:
-        st.info("Silakan buat lembar kerja bernama 'Progress Mateline' di spreadsheet Anda.")
+        st.info("Menampilkan baris data dari sheet 'Progress Mateline'.")
 
 # ==========================================
 # 4. ROUTER EKSEKUSI HALAMAN
