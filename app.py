@@ -7,9 +7,9 @@ st.markdown("""
     <style>
     /* Styling tombol agar menjadi Kartu 3D Besar */
     div.stButton > button {
-        width: 250% !important;
+        width: 150% !important;
         height: 250px !important; 
-        border-radius: 200px !important;
+        border-radius: 250px !important;
         border: none !important;
         background: linear-gradient(145deg, #2d303e, #262730) !important;
         color: white !important;
