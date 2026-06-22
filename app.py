@@ -12,7 +12,7 @@ st.markdown("""
         margin-top: 20px;
     }
     .menu-box {
-        height: 250px;
+        height: 500px;
         width : 1000px;
         background: #262730;
         border-radius: 20px;
