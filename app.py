@@ -47,12 +47,7 @@ if st.session_state.current_page == "Halaman Depan":
     st.markdown("---")
     
     menus = [
-        ("💰", "VARCOST", "Monitoring Varcost"),
-        ("🎯", "KPI", "Monitoring KPI"),
-        ("🔧", "MAINTENANCE", "Monitoring Maintenance"),
-        ("🏢", "ASSET", "Monitoring Asset"),
-        ("🚀", "PROJECT", "Monitoring Project"),
-        ("⚙️", "OPERATIONAL", "Monitoring Operational")
+  )
     ]
     
     # Render Grid
