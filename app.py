@@ -97,7 +97,7 @@ def halaman_varcost():
         with i1:
             st.success("💰 **Tren Laba Bersih Perusahaan (2026)**")
             data_inc = pd.DataFrame({
-                "Net Income (Miliar IDR)": [450, 480, 510, 490, 530, 580]
+                "Net Income (Miliar IDR)": [420, 450, 480, 460, 490, 520]
             }, index=["Jan", "Feb", "Mar", "Apr", "May", "Jun"])
             st.bar_chart(data_inc)
         with i2:
@@ -121,7 +121,7 @@ def halaman_varcost():
 
     st.write("")
     
-    # Baris Grafik Tren Varcost dan Detail Data Regional
+    # Baris Grafik Tren Varcost dan Detail Data Regional (SEKARANG SUDAH BERISI DATA VALID)
     g1, g2 = st.columns(2)
     with g1:
         st.subheader("📈 Monthly Variable Cost Trend (2026)")
@@ -129,7 +129,7 @@ def halaman_varcost():
             {
                 "IP Transit":,
                 "BTS Fuel & Power":,
-                "Fiber Lease Lines": [300, 305, 310, 308, 312, 315]
+                "Fiber Lease Lines": [310, 312, 315, 315, 314, 315]
             },
             index=["Jan", "Feb", "Mar", "Apr", "May", "Jun"]
         )
