@@ -75,39 +75,72 @@ st.markdown("---")
 # 3. KONTEN HALAMAN (RESOURCE LIVE GOOGLE SHEETS)
 # ==========================================
 
-# --- MENU 1: TAB VARCOST ---
+# --- MENU 1: TAB VARCOST (VERSI PERBAIKAN KOLOM & GRAFIK) ---
 def halaman_varcost():
     st.title("🌐 Telecom Variable Cost Analysis")
     st.caption("Memantau ringkasan biaya operasional dan data finansial regional dari tab 'VARCOST'.")
-    
-    df_varcost = ambil_data_sheet("VARCOST")
-
-    # Dropdown Analisa Finansial
-    st.subheader("📊 Corporate Financial Dropdown")
-    opsi_analisa = st.selectbox(
-        "Pilih Lini Analisis Finansial:",
-        ["Revenue Analysis (Pendapatan)", "Net Income Analysis (Laba Bersih)"]
-    )
-
-    if opsi_analisa == "Revenue Analysis (Pendapatan)":
-        if not df_varcost.empty and 'Bulan' in df_varcost.columns and 'Revenue' in df_varcost.columns:
-            st.line_chart(df_varcost.set_index('Bulan')[['Revenue']])
-        else:
-            st.info("💡 Grafik pendapatan akan muncul jika kolom 'Bulan' dan 'Revenue' tersedia di dalam sheet VARCOST.")
-            
-    elif opsi_analisa == "Net Income Analysis (Laba Bersih)":
-        if not df_varcost.empty and 'Bulan' in df_varcost.columns and 'Net Income' in df_varcost.columns:
-            st.bar_chart(df_varcost.set_index('Bulan')[['Net Income']])
-        else:
-            st.info("💡 Grafik laba bersih akan muncul jika kolom 'Bulan' dan 'Net Income' tersedia di dalam sheet VARCOST.")
-
     st.write("")
-    st.subheader("📋 Data Sheet Riil: VARCOST")
-    if not df_varcost.empty:
-        st.dataframe(df_varcost, use_container_width=True, hide_index=True)
+
+    # 1. Tarik data mentah
+    df_raw = ambil_data_sheet("VARCOST")
+
+    if not df_raw.empty:
+        # 2. Pembersihan otomatis nama kolom (menghapus spasi & huruf kecil semua)
+        # Langkah ini menjamin kode tidak akan eror meski di Google Sheets tertulis 'revenue ', 'Revenue', atau 'REVENUE'
+        df_varcost = df_raw.copy()
+        df_varcost.columns = df_varcost.columns.str.strip().str.lower()
+
+        # Dropdown Analisa Finansial
+        st.subheader("📊 Corporate Financial Dropdown")
+        opsi_analisa = st.selectbox(
+            "Pilih Lini Analisis Finansial:",
+            ["Revenue Analysis (Pendapatan)", "Net Income Analysis (Laba Bersih)"]
+        )
+
+        # Pemetaan nama kolom setelah dikecilkan otomatis
+        col_bulan = "bulan"
+        col_revenue = "revenue"
+        col_income = "net income"
+
+        # Tampilan Grafik 1: Revenue
+        if opsi_analisa == "Revenue Analysis (Pendapatan)":
+            if col_bulan in df_varcost.columns and col_revenue in df_varcost.columns:
+                # Membuat data frame khusus grafik dan membersihkan baris kosong (dropna)
+                df_chart = df_varcost[[col_bulan, col_revenue]].dropna()
+                df_chart = df_chart.set_index(col_bulan)
+                st.line_chart(df_chart)
+            else:
+                st.warning(f"⚠️ Kolom '{col_bulan}' atau '{col_revenue}' tidak terdeteksi. Kolom yang ditemukan di sheet Anda: {list(df_raw.columns)}")
+                
+        # Tampilan Grafik 2: Net Income
+        elif opsi_analisa == "Net Income Analysis (Laba Bersih)":
+            if col_bulan in df_varcost.columns and col_income in df_varcost.columns:
+                df_chart = df_varcost[[col_bulan, col_income]].dropna()
+                df_chart = df_chart.set_index(col_bulan)
+                st.bar_chart(df_chart)
+            else:
+                st.warning(f"⚠️ Kolom '{col_bulan}' atau '{col_income}' tidak terdeteksi. Kolom yang ditemukan di sheet Anda: {list(df_raw.columns)}")
+
+        # Menampilkan Ringkasan Metrik Terkini (Mengambil baris terbawah data)
+        st.write("")
+        st.subheader("📈 Ringkasan Nilai Terkini")
+        m1, m2 = st.columns(2)
+        
+        with m1:
+            val_rev = df_raw[df_raw.columns[df_varcost.columns == col_revenue]].iloc[-1].values[0] if col_revenue in df_varcost.columns else "-"
+            st.metric(label="Revenue Terakhir", value=str(val_rev))
+        with m2:
+            val_inc = df_raw[df_raw.columns[df_varcost.columns == col_income]].iloc[-1].values[0] if col_income in df_varcost.columns else "-"
+            st.metric(label="Net Income Terakhir", value=str(val_inc))
+
+        # Menampilkan Tabel Utama Asli
+        st.write("")
+        st.subheader("📋 Data Sheet Riil: VARCOST")
+        st.dataframe(df_raw, use_container_width=True, hide_index=True)
+
     else:
         st.warning("⚠️ Data Utama gagal ditarik dari Google Sheets atau tab 'VARCOST' kosong.")
-        st.info("Pastikan spreadsheet Anda sudah diatur ke akses publik: **'Anyone with the link can view'** agar Streamlit Cloud dapat membaca isinya.")
+        st.info("Pastikan spreadsheet Anda sudah diatur ke akses publik: **'Anyone with the link can view'**.")
 
 # --- MENU 2: TAB DATA PM ---
 def halaman_data_pm():
