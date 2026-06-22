@@ -51,7 +51,6 @@ with col1:
     if st.button("💰\n\nVARCOST", use_container_width=True, key="btn_varcost"):
         st.session_state.active_menu = "VARCOST"
         st.session_state.play_sound = True
-        st.grid = None
         st.rerun()
 with col2:
     if st.button("🛠️\n\nDATA PM", use_container_width=True, key="btn_pm"):
@@ -112,29 +111,24 @@ def halaman_varcost():
         ["Revenue Analysis (Pendapatan)", "Net Income Analysis (Laba Bersih)"]
     )
 
-    # Memuat data live dari sheet 'data SVA'
     df_sva_raw = ambil_data_sheet("data SVA")
 
     if not df_sva_raw.empty:
         try:
-            # Buat salinan data dan seragamkan nama kolom menjadi huruf kecil serta hapus spasi liar
             df_sva = df_sva_raw.copy()
             df_sva.columns = df_sva.columns.str.strip().str.lower()
 
-            # 🛠️ SISTEM PENCARIAN KOLOM OTOMATIS BERDASARKAN TEKS (ANTI-SALAH URUTAN)
             col_bulan = next((c for c in df_sva.columns if "bulan" in c), None)
             col_revenue = next((c for c in df_sva.columns if "revenue" in c), None)
             col_income = next((c for c in df_sva.columns if "income" in c or "laba" in c), None)
 
             if col_bulan and col_revenue and col_income:
-                # Pembersihan data teks mata uang menjadi angka matematika desimal
                 df_sva[col_revenue] = df_sva[col_revenue].astype(str).str.replace(r'[^\d,-]', '', regex=True).str.replace(',', '.')
                 df_sva[col_revenue] = pd.to_numeric(df_sva[col_revenue], errors='coerce').fillna(0)
 
                 df_sva[col_income] = df_sva[col_income].astype(str).str.replace(r'[^\d,-]', '', regex=True).str.replace(',', '.')
                 df_sva[col_income] = pd.to_numeric(df_sva[col_income], errors='coerce').fillna(0)
 
-                # 📈 TAMPILAN 1: REVENUE ANALYSIS
                 if opsi_analisa == "Revenue Analysis (Pendapatan)":
                     st.info(f"📈 **Tren Revenue Bulanan (Sumber otomatis terdeteksi: '{col_revenue}')**")
                     df_chart = df_sva[[col_bulan, col_revenue]].dropna()
@@ -150,7 +144,6 @@ def halaman_varcost():
                         val_rev_terakhir = df_sva[col_revenue].iloc[-1]
                         st.metric(label="📅 Revenue Periode Terakhir", value=f"{val_rev_terakhir:,.0f}".replace(",", "."))
 
-                # 📊 TAMPILAN 2: NET INCOME ANALYSIS
                 elif opsi_analisa == "Net Income Analysis (Laba Bersih)":
                     st.success(f"💰 **Tren Net Income Bulanan (Sumber otomatis terdeteksi: '{col_income}')**")
                     df_chart = df_sva[[col_bulan, col_income]].dropna()
@@ -166,8 +159,8 @@ def halaman_varcost():
                         val_inc_terakhir = df_sva[col_income].iloc[-1]
                         st.metric(label="📅 Net Income Periode Terakhir", value=f"{val_inc_terakhir:,.0f}".replace(",", "."))
             else:
-                st.warning("⚠️ Kolom finansial tidak lengkap.")
-                st.info(f"Nama kolom terdeteksi pada 'data SVA': {list(df_sva_raw.columns)}")
+                st.warning("⚠️ Kolom finansial tidak lengkap di sheet 'data SVA'.")
+                st.info(f"Kolom terbaca: {list(df_sva_raw.columns)}")
                 
         except Exception as err:
             st.error(f"Gagal memproses perhitungan angka pada tab 'data SVA': {err}")
@@ -176,7 +169,6 @@ def halaman_varcost():
 
     st.markdown("---")
 
-    # Menampilkan Tabel Utama 'VARCOST' asli di bagian bawah
     st.subheader("📋 Data Sheet Riil: VARCOST")
     df_varcost = ambil_data_sheet("VARCOST")
     if not df_varcost.empty:
@@ -228,3 +220,18 @@ def halaman_data_pjb():
     st.title("⏳ PJB Aging Log (data PJB aging)")
     df_pjb = ambil_data_sheet("data PJB aging")
     if not df_pjb.empty:
+        st.dataframe(df_pjb, use_container_width=True, hide_index=True)
+    else:
+        st.info("Tab 'data PJB aging' kosong.")
+
+def halaman_monitoring_mbp():
+    st.title("📡 Monitoring MBP & Progress Mateline Management")
+    st.info("Struktur penampung siap pakai untuk modul tambahan.")
+
+# ==========================================
+# 4. DICTIONARY ROUTER (KEBAL ERROR SPASI)
+# ==========================================
+peta_halaman = {
+    "VARCOST": halaman_varcost,
+    "DATA_PM": halaman_data_pm,
+    "DATA_PROJECT": halaman_data_project,
