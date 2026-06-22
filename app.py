@@ -2,36 +2,49 @@ import streamlit as st
 
 st.set_page_config(page_title="Dashboard KUT", layout="wide")
 
-# --- CSS PRESISI MENGGUNAKAN GRID ---
+# --- CSS PRESISI MUTLAK ---
 st.markdown("""
     <style>
-    .grid-wrapper {
+    /* 1. Grid Container agar 3 kolom selalu sejajar */
+    .grid-container {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
         gap: 30px;
-        margin-top: 20px;
+        padding: 20px;
     }
-    .menu-box {
-        height: 250px;
-        background: #262730;
+    
+    /* 2. Kartu (Box) dengan ukuran yang dikunci */
+    .menu-card {
+        height: 220px !important; /* Ukuran tinggi tetap */
+        background: linear-gradient(145deg, #2d303e, #262730);
         border-radius: 20px;
-        border: 2px solid #444;
+        border: 1px solid #444;
         display: flex;
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        transition: 0.3s;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        position: relative;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+    }
+    
+    .menu-card:hover {
+        transform: translateY(-10px) scale(1.02);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+        border: 1px solid #6c63ff;
+    }
+
+    /* 3. Tombol Transparan menutupi seluruh kotak agar bisa diklik */
+    div.stButton > button {
+        position: absolute;
+        width: 100% !important;
+        height: 100% !important;
+        opacity: 0;
         cursor: pointer;
-        color: white;
-        text-decoration: none;
     }
-    .menu-box:hover {
-        border-color: #6c63ff;
-        transform: translateY(-5px);
-        background: #31333F;
-    }
-    .icon-part { font-size: 60px; margin-bottom: 10px; }
-    .text-part { font-size: 20px; font-weight: bold; }
+    
+    .icon-text { font-size: 50px; }
+    .label-text { font-size: 18px; font-weight: bold; color: white; margin-top: 10px; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -55,16 +68,22 @@ if st.session_state.current_page == "Halaman Depan":
     ]
     
     # Render Grid
-    st.markdown('<div class="grid-container grid-wrapper">', unsafe_allow_html=True)
+    st.markdown('<div class="grid-container">', unsafe_allow_html=True)
     
-    # Menggunakan kolom untuk memicu event klik via tombol tersembunyi
-    cols = st.columns(3)
-    for i, (icon, label, target) in enumerate(menus):
-        with cols[i % 3]:
-            # Kita buat tombol yang memenuhi ruang untuk menangkap klik
-            if st.button(f"{icon}\n\n{label}", key=target):
+    for icon, label, target in menus:
+        # Kita buat kolom virtual di dalam HTML agar bisa di-grid
+        # Namun karena Streamlit butuh state, kita taruh button di setiap item
+        with st.container():
+            st.markdown(f"""
+                <div class="menu-card">
+                    <div class="icon-text">{icon}</div>
+                    <div class="label-text">{label}</div>
+                </div>
+            """, unsafe_allow_html=True)
+            # Tombol transparan menutupi kartu
+            if st.button(f"Klik {label}", key=target):
                 navigate_to(target)
-    
+                
     st.markdown('</div>', unsafe_allow_html=True)
 
 elif st.session_state.current_page.startswith("Monitoring"):
