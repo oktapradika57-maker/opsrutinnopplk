@@ -49,31 +49,48 @@ col1, col2, col3, col4, col5, col6, col7, col8, col_ref = st.columns([1, 1, 1, 1
 
 with col1:
     if st.button("💰\n\nVARCOST", use_container_width=True, key="btn_varcost"):
-        st.session_state.active_menu = "VARCOST"; st.session_state.play_sound = True; st.rerun()
+        st.session_state.active_menu = "VARCOST"
+        st.session_state.play_sound = True
+        st.rerun()
 with col2:
     if st.button("🛠️\n\nDATA PM", use_container_width=True, key="btn_pm"):
-        st.session_state.active_menu = "DATA_PM"; st.session_state.play_sound = True; st.rerun()
+        st.session_state.active_menu = "DATA_PM"
+        st.session_state.play_sound = True
+        st.rerun()
 with col3:
     if st.button("🚀\n\nDATA PROJECT", use_container_width=True, key="btn_project"):
-        st.session_state.active_menu = "DATA_PROJECT"; st.session_state.play_sound = True; st.rerun()
+        st.session_state.active_menu = "DATA_PROJECT"
+        st.session_state.play_sound = True
+        st.rerun()
 with col4:
     if st.button("🏢\n\nDATA ASSET", use_container_width=True, key="btn_asset"):
-        st.session_state.active_menu = "DATA_ASSET"; st.session_state.play_sound = True; st.rerun()
+        st.session_state.active_menu = "DATA_ASSET"
+        st.session_state.play_sound = True
+        st.rerun()
 with col5:
     if st.button("📈\n\nDATA KPI", use_container_width=True, key="btn_kpi"):
-        st.session_state.active_menu = "DATA_KPI"; st.session_state.play_sound = True; st.rerun()
+        st.session_state.active_menu = "DATA_KPI"
+        st.session_state.play_sound = True
+        st.rerun()
 with col6:
     if st.button("⚙️\n\nDATA OPERATIONAL", use_container_width=True, key="btn_operational"):
-        st.session_state.active_menu = "DATA_OPERATIONAL"; st.session_state.play_sound = True; st.rerun()
+        st.session_state.active_menu = "DATA_OPERATIONAL"
+        st.session_state.play_sound = True
+        st.rerun()
 with col7:
     if st.button("⏳\n\nDATA PJB AGING", use_container_width=True, key="btn_pjb"):
-        st.session_state.active_menu = "DATA_PJB"; st.session_state.play_sound = True; st.rerun()
+        st.session_state.active_menu = "DATA_PJB"
+        st.session_state.play_sound = True
+        st.rerun()
 with col8:
     if st.button("📡\n\nMONITORING MBP", use_container_width=True, key="btn_mbp"):
-        st.session_state.active_menu = "MONITORING_MBP"; st.session_state.play_sound = True; st.rerun()
+        st.session_state.active_menu = "MONITORING_MBP"
+        st.session_state.play_sound = True
+        st.rerun()
 with col_ref:
     if st.button("🔄\n\nREFRESH DATA", use_container_width=True, key="btn_refresh_all", type="primary"):
-        st.cache_data.clear(); st.session_state.play_sound = True
+        st.cache_data.clear()
+        st.session_state.play_sound = True
         st.toast("Memperbarui seluruh data dari Google Sheets...", icon="🔄")
         st.rerun()
 
@@ -105,7 +122,7 @@ def halaman_varcost():
             col_bulan = df_sva.columns[6]     # Kolom G
             col_income = df_sva.columns[19]   # Kolom T
 
-            # 🛠️ PROSES DATA: Pembersihan & Konversi Tipe Data Teks ke Angka Matematika
+            # PROSES DATA: Pembersihan & Konversi Tipe Data Teks ke Angka Matematika
             df_sva[col_revenue] = df_sva[col_revenue].astype(str).str.replace(r'[^\d,-]', '', regex=True).str.replace(',', '.')
             df_sva[col_revenue] = pd.to_numeric(df_sva[col_revenue], errors='coerce').fillna(0)
 
@@ -175,42 +192,53 @@ def halaman_varcost():
 def halaman_data_pm():
     st.title("🛠️ Preventive Maintenance Log (data PM)")
     df_pm = ambil_data_sheet("data PM")
-    st.dataframe(df_pm, use_container_width=True, hide_index=True) if not df_pm.empty else st.info("Tab 'data PM' kosong.")
+    if not df_pm.empty:
+        st.dataframe(df_pm, use_container_width=True, hide_index=True)
+    else:
+        st.info("Tab 'data PM' kosong.")
 
 def halaman_data_project():
     st.title("🚀 Network Rollout Progress (data Project)")
     df_project = ambil_data_sheet("data Project")
-    st.dataframe(df_project, use_container_width=True, hide_index=True) if not df_project.empty else st.info("Tab 'data Project' kosong.")
+    if not df_project.empty:
+        st.dataframe(df_project, use_container_width=True, hide_index=True)
+    else:
+        st.info("Tab 'data Project' kosong.")
 
 def halaman_data_asset():
     st.title("🏢 Asset Management Inventory (data Asset)")
     df_asset = ambil_data_sheet("data Asset")
-    st.dataframe(df_asset, use_container_width=True, hide_index=True) if not df_asset.empty else st.info("Tab 'data Asset' kosong.")
+    if not df_asset.empty:
+        st.dataframe(df_asset, use_container_width=True, hide_index=True)
+    else:
+        st.info("Tab 'data Asset' kosong.")
 
 def halaman_data_kpi():
     st.title("📈 Network Performance Indicator (data KPI)")
     df_kpi = ambil_data_sheet("data KPI")
-    st.dataframe(df_kpi, use_container_width=True, hide_index=True) if not df_kpi.empty else st.info("Tab 'data KPI' kosong.")
+    if not df_kpi.empty:
+        st.dataframe(df_kpi, use_container_width=True, hide_index=True)
+    else:
+        st.info("Tab 'data KPI' kosong.")
 
 def halaman_data_operational():
     st.title("⚙️ Network Operations Data (data Operational)")
     df_ops = ambil_data_sheet("data Operational")
-    st.dataframe(df_ops, use_container_width=True, hide_index=True) if not df_ops.empty else st.info("Tab 'data Operational' kosong.")
+    if not df_ops.empty:
+        st.dataframe(df_ops, use_container_width=True, hide_index=True)
+    else:
+        st.info("Tab 'data Operational' kosong.")
 
 def halaman_data_pjb():
     st.title("⏳ PJB Aging Log (data PJB aging)")
     df_pjb = ambil_data_sheet("data PJB aging")
-    st.dataframe(df_pjb, use_container_width=True, hide_index=True) if not df_pjb.empty else st.info("Tab 'data PJB aging' kosong.")
+    if not df_pjb.empty:
+        st.dataframe(df_pjb, use_container_width=True, hide_index=True)
+    else:
+        st.info("Tab 'data PJB aging' kosong.")
 
 def halaman_monitoring_mbp():
     st.title("📡 Monitoring MBP & Progress Mateline Management")
     st.info("Struktur penampung siap pakai untuk modul tambahan.")
 
 # ==========================================
-# 4. ROUTER EKSEKUSI HALAMAN
-# ==========================================
-if st.session_state.active_menu == "VARCOST":
-    halaman_varcost()
-elif st.session_state.active_menu == "DATA_PM":
-    halaman_data_pm()
-elif st.session_state.active_menu == "DATA_PROJECT":
