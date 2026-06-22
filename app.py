@@ -117,10 +117,10 @@ def halaman_varcost():
 
     if not df_sva.empty:
         try:
-            # Mengunci nama kolom berdasarkan urutan fisik posisi kolom (F=5, G=6, T=19)
-            col_revenue = df_sva.columns[5]   # Kolom F
-            col_bulan = df_sva.columns[6]     # Kolom G
-            col_income = df_sva.columns[19]   # Kolom T
+            # 🛠️ PERBAIKAN ABSOLUT: Mengambil string nama kolom fisik berdasarkan indeks angka koordinat yang valid
+            col_revenue = df_sva.columns[5]   # Ambil nama asli dari fisik Kolom F
+            col_bulan = df_sva.columns[6]     # Ambil nama asli dari fisik Kolom G
+            col_income = df_sva.columns[19]   # Ambil nama asli dari fisik Kolom T
 
             # PROSES DATA: Pembersihan & Konversi Tipe Data Teks ke Angka Matematika
             df_sva[col_revenue] = df_sva[col_revenue].astype(str).str.replace(r'[^\d,-]', '', regex=True).str.replace(',', '.')
@@ -239,6 +239,3 @@ def halaman_data_pjb():
 
 def halaman_monitoring_mbp():
     st.title("📡 Monitoring MBP & Progress Mateline Management")
-    st.info("Struktur penampung siap pakai untuk modul tambahan.")
-
-# ==========================================
