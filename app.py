@@ -2,20 +2,30 @@ import streamlit as st
 
 st.set_page_config(page_title="Corporate Dashboard", layout="wide")
 
-# CSS untuk kartu yang rapi
+# CSS untuk kartu yang bisa diklik seluruh areanya
 st.markdown("""
     <style>
-    .menu-card {
-        background: #262730;
-        border: 1px solid #444;
-        border-radius: 15px;
-        padding: 20px;
-        text-align: center;
-        transition: 0.3s;
+    /* Styling agar tombol Streamlit mengisi seluruh area div */
+    div.stButton > button {
+        width: 100% !important;
+        height: 200px !important;
+        border-radius: 15px !important;
+        border: 1px solid #444 !important;
+        background-color: #262730 !important;
+        color: white !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+        align-items: center !important;
+        transition: 0.3s !important;
     }
-    .menu-card:hover { border-color: #6c63ff; transform: translateY(-5px); }
-    .icon { font-size: 40px; margin-bottom: 10px; }
-    .title { font-size: 18px; font-weight: bold; color: white; }
+    div.stButton > button:hover {
+        border-color: #6c63ff !important;
+        transform: translateY(-5px);
+        background-color: #31333F !important;
+    }
+    .icon { font-size: 50px; margin-bottom: 10px; }
+    .label { font-size: 18px; font-weight: bold; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -41,17 +51,10 @@ if st.session_state.current_page == "Halaman Depan":
     cols = st.columns(3)
     for i, (icon, title, target) in enumerate(menus):
         with cols[i % 3]:
-            # Membuat layout kartu menggunakan markdown
-            st.markdown(f"""
-                <div class="menu-card">
-                    <div class="icon">{icon}</div>
-                    <div class="title">{title}</div>
-                </div>
-            """, unsafe_allow_html=True)
-            # Tombol diletakkan tepat di bawah/atas untuk aksi klik
-            if st.button(f"Pilih {title}", key=title):
+            # Tombol ini sekarang merender icon dan label di dalamnya
+            # Pengguna bisa mengklik di mana saja dalam area kotak ini
+            if st.button(f"<div class='icon'>{icon}</div><div class='label'>{title}</div>", key=title):
                 navigate_to(target)
-            st.markdown("<br>", unsafe_allow_html=True)
 
 elif st.session_state.current_page == "Monitoring Asset":
     st.title("🏢 Monitoring Asset")
