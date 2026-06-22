@@ -2,14 +2,22 @@ import streamlit as st
 
 st.set_page_config(page_title="Dashboard KUT", layout="wide")
 
-# --- CSS PRESISI LANDSCAPE ---
+# --- CSS PRESISI DENGAN GRID & ASPECT RATIO ---
 st.markdown("""
     <style>
-    /* Memastikan tombol memiliki ukuran tetap yang sama */
+    /* Kontainer utama untuk landscape */
+    .grid-layout {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr); /* 6 kolom sama rata */
+        gap: 20px;
+        margin-top: 20px;
+    }
+    
+    /* Paksa tombol menjadi kotak sempurna (aspect-ratio) */
     div.stButton > button {
         width: 100% !important;
-        height: 150px !important; 
-        border-radius: 15px !important;
+        aspect-ratio: 1 / 1 !important; /* Membuat kotak selalu persegi/presisi */
+        border-radius: 20px !important;
         border: 2px solid #444 !important;
         background: #262730 !important;
         color: white !important;
@@ -21,10 +29,11 @@ st.markdown("""
         align-items: center !important;
         transition: 0.3s !important;
     }
+    
     div.stButton > button:hover {
         border-color: #6c63ff !important;
         background: #31333F !important;
-        transform: scale(1.02);
+        transform: scale(1.05);
     }
     </style>
 """, unsafe_allow_html=True)
@@ -39,20 +48,20 @@ if st.session_state.current_page == "Halaman Depan":
     st.title("✨ Dashboard Kinarya Utama Teknik")
     st.markdown("---")
     
-    # Daftar menu
     menus = [
         ("💰", "VARCOST"), ("🎯", "KPI"), ("🔧", "MAINTENANCE"),
         ("🏢", "ASSET"), ("🚀", "PROJECT"), ("⚙️", "OPERATIONAL")
     ]
     
-    # MENGUBAH TAMPILAN MENJADI LANDSCAPE DENGAN 6 KOLOM
-    cols = st.columns(6)
+    # Render Landscape menggunakan grid CSS
+    st.markdown('<div class="grid-layout">', unsafe_allow_html=True)
     
-    for i, (icon, label) in enumerate(menus):
-        # Setiap kolom hanya berisi 1 tombol, sehingga berjejer ke samping (Landscape)
-        with cols[i]:
-            if st.button(f"{icon}\n\n{label}", key=label):
-                navigate_to(f"Monitoring {label.capitalize()}")
+    # Kita buat tombol di setiap kolom
+    for icon, label in menus:
+        if st.button(f"{icon}\n\n{label}", key=label):
+            navigate_to(f"Monitoring {label.capitalize()}")
+            
+    st.markdown('</div>', unsafe_allow_html=True)
 
 elif st.session_state.current_page.startswith("Monitoring"):
     st.title(f"📊 {st.session_state.current_page}")
