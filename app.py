@@ -2,48 +2,30 @@ import streamlit as st
 
 st.set_page_config(page_title="Dashboard KUT", layout="wide")
 
-# --- CSS PRESISI UNTUK LANDSCAPE ---
+# --- CSS PRESISI LANDSCAPE ---
 st.markdown("""
     <style>
-    /* Membuat container grid untuk tata letak landscape */
-    .landscape-grid {
-        display: grid;
-        grid-template-columns: repeat(6, 1fr); /* 6 kolom dalam 1 baris */
-        gap: 15px;
-        margin-top: 20px;
-    }
-    
-    /* Mengunci ukuran box agar seragam */
-    .menu-card {
-        height: 180px; /* Tinggi seragam */
-        background: #262730;
-        border-radius: 15px;
-        border: 2px solid #444;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        transition: 0.3s;
-        cursor: pointer;
-        text-align: center;
-    }
-    .menu-card:hover {
-        border-color: #6c63ff;
-        background: #31333F;
-        transform: translateY(-5px);
-    }
-    
-    /* Menyembunyikan tombol Streamlit tapi tetap menjaga fungsinya */
+    /* Memastikan tombol memiliki ukuran tetap yang sama */
     div.stButton > button {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        opacity: 0;
-        cursor: pointer;
+        width: 100% !important;
+        height: 150px !important; 
+        border-radius: 15px !important;
+        border: 2px solid #444 !important;
+        background: #262730 !important;
+        color: white !important;
+        font-size: 16px !important;
+        font-weight: bold !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+        align-items: center !important;
+        transition: 0.3s !important;
     }
-    
-    .icon { font-size: 35px; }
-    .label { font-size: 14px; font-weight: bold; color: white; margin-top: 8px; }
+    div.stButton > button:hover {
+        border-color: #6c63ff !important;
+        background: #31333F !important;
+        transform: scale(1.02);
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -57,33 +39,21 @@ if st.session_state.current_page == "Halaman Depan":
     st.title("✨ Dashboard Kinarya Utama Teknik")
     st.markdown("---")
     
+    # Daftar menu
     menus = [
-        ("💰", "VARCOST", "Monitoring Varcost"),
-        ("🎯", "KPI", "Monitoring KPI"),
-        ("🔧", "MAINTENANCE", "Monitoring Maintenance"),
-        ("🏢", "ASSET", "Monitoring Asset"),
-        ("🚀", "PROJECT", "Monitoring Project"),
-        ("⚙️", "OPERATIONAL", "Monitoring Operational")
+        ("💰", "VARCOST"), ("🎯", "KPI"), ("🔧", "MAINTENANCE"),
+        ("🏢", "ASSET"), ("🚀", "PROJECT"), ("⚙️", "OPERATIONAL")
     ]
     
-    # Render Landscape Grid
-    st.markdown('<div class="landscape-grid">', unsafe_allow_html=True)
+    # MENGUBAH TAMPILAN MENJADI LANDSCAPE DENGAN 6 KOLOM
+    cols = st.columns(6)
     
-    for icon, label, target in menus:
-        # Menggunakan kontainer agar tombol terikat pada box
-        with st.container():
-            st.markdown(f"""
-                <div class="menu-card">
-                    <div class="icon">{icon}</div>
-                    <div class="label">{label}</div>
-                </div>
-            """, unsafe_allow_html=True)
-            # Tombol transparan diletakkan di atas box
-            if st.button(f"Pilih {label}", key=target):
-                navigate_to(target)
-                
-    st.markdown('</div>', unsafe_allow_html=True)
+    for i, (icon, label) in enumerate(menus):
+        # Setiap kolom hanya berisi 1 tombol, sehingga berjejer ke samping (Landscape)
+        with cols[i]:
+            if st.button(f"{icon}\n\n{label}", key=label):
+                navigate_to(f"Monitoring {label.capitalize()}")
 
 elif st.session_state.current_page.startswith("Monitoring"):
     st.title(f"📊 {st.session_state.current_page}")
-    if st.button("⬅ Kembali"): navigate_to("Halaman Depan")
+    if st.button("⬅ Kembali ke Dashboard"): navigate_to("Halaman Depan")
