@@ -2,49 +2,48 @@ import streamlit as st
 
 st.set_page_config(page_title="Dashboard KUT", layout="wide")
 
-# --- CSS PRESISI MUTLAK ---
+# --- CSS PRESISI UNTUK LANDSCAPE ---
 st.markdown("""
     <style>
-    /* 1. Grid Container agar 3 kolom selalu sejajar */
-    .grid-container {
+    /* Membuat container grid untuk tata letak landscape */
+    .landscape-grid {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 30px;
-        padding: 20px;
+        grid-template-columns: repeat(6, 1fr); /* 6 kolom dalam 1 baris */
+        gap: 15px;
+        margin-top: 20px;
     }
     
-    /* 2. Kartu (Box) dengan ukuran yang dikunci */
+    /* Mengunci ukuran box agar seragam */
     .menu-card {
-        height: 220px !important; /* Ukuran tinggi tetap */
-        background: linear-gradient(145deg, #2d303e, #262730);
-        border-radius: 20px;
-        border: 1px solid #444;
+        height: 180px; /* Tinggi seragam */
+        background: #262730;
+        border-radius: 15px;
+        border: 2px solid #444;
         display: flex;
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        position: relative;
-        box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        transition: 0.3s;
+        cursor: pointer;
+        text-align: center;
+    }
+    .menu-card:hover {
+        border-color: #6c63ff;
+        background: #31333F;
+        transform: translateY(-5px);
     }
     
-    .menu-card:hover {
-        transform: translateY(-10px) scale(1.02);
-        box-shadow: 0 20px 40px rgba(0,0,0,0.5);
-        border: 1px solid #6c63ff;
-    }
-
-    /* 3. Tombol Transparan menutupi seluruh kotak agar bisa diklik */
+    /* Menyembunyikan tombol Streamlit tapi tetap menjaga fungsinya */
     div.stButton > button {
         position: absolute;
-        width: 100% !important;
-        height: 100% !important;
+        width: 100%;
+        height: 100%;
         opacity: 0;
         cursor: pointer;
     }
     
-    .icon-text { font-size: 50px; }
-    .label-text { font-size: 18px; font-weight: bold; color: white; margin-top: 10px; }
+    .icon { font-size: 35px; }
+    .label { font-size: 14px; font-weight: bold; color: white; margin-top: 8px; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -67,21 +66,20 @@ if st.session_state.current_page == "Halaman Depan":
         ("⚙️", "OPERATIONAL", "Monitoring Operational")
     ]
     
-    # Render Grid
-    st.markdown('<div class="grid-container">', unsafe_allow_html=True)
+    # Render Landscape Grid
+    st.markdown('<div class="landscape-grid">', unsafe_allow_html=True)
     
     for icon, label, target in menus:
-        # Kita buat kolom virtual di dalam HTML agar bisa di-grid
-        # Namun karena Streamlit butuh state, kita taruh button di setiap item
+        # Menggunakan kontainer agar tombol terikat pada box
         with st.container():
             st.markdown(f"""
                 <div class="menu-card">
-                    <div class="icon-text">{icon}</div>
-                    <div class="label-text">{label}</div>
+                    <div class="icon">{icon}</div>
+                    <div class="label">{label}</div>
                 </div>
             """, unsafe_allow_html=True)
-            # Tombol transparan menutupi kartu
-            if st.button(f"Klik {label}", key=target):
+            # Tombol transparan diletakkan di atas box
+            if st.button(f"Pilih {label}", key=target):
                 navigate_to(target)
                 
     st.markdown('</div>', unsafe_allow_html=True)
