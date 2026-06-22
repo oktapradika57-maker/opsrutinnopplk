@@ -16,18 +16,16 @@ if "active_menu" not in st.session_state:
 # Tautan Spreadsheet Utama Anda (Database Reg Kalimantan)
 URL_SPREADSHEET = "https://google.com"
 
-# Fungsi membaca data dengan proteksi layar kosong
-@st.cache_data(ttl=30) # Segarkan cache lebih cepat (30 detik) jika masih tahap testing
+# Fungsi resmi menggunakan st.connection dengan proteksi penanganan error
+@st.cache_data(ttl=30) # Segarkan data otomatis dari Google Sheets setiap 30 detik
 def ambil_data_sheet(nama_sheet):
     try:
         conn = st.connection("gsheets", type=GSheetsConnection)
-        # Menambahkan argumen pembacaan langsung dari URL publik tanpa hambatan
         df = conn.read(spreadsheet=URL_SPREADSHEET, worksheet=nama_sheet)
         if df is not None:
             return df
         return pd.DataFrame()
     except Exception as e:
-        # Jika gagal, kembalikan DataFrame kosong agar program di bawahnya tetap tereksekusi
         return pd.DataFrame()
 
 # ==========================================
@@ -38,7 +36,6 @@ col1, col2, col3, col4, col5, col6, col7, col8 = st.columns(8)
 with col1:
     if st.button("💰\n\nVARCOST", use_container_width=True, key="btn_varcost"):
         st.session_state.active_menu = "VARCOST"
-        st.grid = None # reset state
         st.rerun()
 with col2:
     if st.button("🛠️\n\nDATA PM", use_container_width=True, key="btn_pm"):
@@ -75,18 +72,17 @@ st.markdown("---")
 # 3. KONTEN HALAMAN (RESOURCE LIVE GOOGLE SHEETS)
 # ==========================================
 
-# --- MENU 1: TAB VARCOST (VERSI PERBAIKAN KOLOM & GRAFIK) ---
+# --- MENU 1: TAB VARCOST (VERSI ANTI-ERROR & AUTOMATIC STRIP) ---
 def halaman_varcost():
     st.title("🌐 Telecom Variable Cost Analysis")
     st.caption("Memantau ringkasan biaya operasional dan data finansial regional dari tab 'VARCOST'.")
     st.write("")
 
-    # 1. Tarik data mentah
+    # Tarik data mentah dari spreadsheet
     df_raw = ambil_data_sheet("VARCOST")
 
     if not df_raw.empty:
-        # 2. Pembersihan otomatis nama kolom (menghapus spasi & huruf kecil semua)
-        # Langkah ini menjamin kode tidak akan eror meski di Google Sheets tertulis 'revenue ', 'Revenue', atau 'REVENUE'
+        # Pembersihan otomatis nama kolom (menghapus spasi liar & memaksa huruf kecil)
         df_varcost = df_raw.copy()
         df_varcost.columns = df_varcost.columns.str.strip().str.lower()
 
@@ -97,7 +93,7 @@ def halaman_varcost():
             ["Revenue Analysis (Pendapatan)", "Net Income Analysis (Laba Bersih)"]
         )
 
-        # Pemetaan nama kolom setelah dikecilkan otomatis
+        # Variabel pemetaan nama kolom setelah otomatis dikecilkan
         col_bulan = "bulan"
         col_revenue = "revenue"
         col_income = "net income"
@@ -105,12 +101,11 @@ def halaman_varcost():
         # Tampilan Grafik 1: Revenue
         if opsi_analisa == "Revenue Analysis (Pendapatan)":
             if col_bulan in df_varcost.columns and col_revenue in df_varcost.columns:
-                # Membuat data frame khusus grafik dan membersihkan baris kosong (dropna)
                 df_chart = df_varcost[[col_bulan, col_revenue]].dropna()
                 df_chart = df_chart.set_index(col_bulan)
                 st.line_chart(df_chart)
             else:
-                st.warning(f"⚠️ Kolom '{col_bulan}' atau '{col_revenue}' tidak terdeteksi. Kolom yang ditemukan di sheet Anda: {list(df_raw.columns)}")
+                st.warning(f"⚠️ Kolom '{col_bulan}' atau '{col_revenue}' tidak terdeteksi. Kolom terdeteksi: {list(df_raw.columns)}")
                 
         # Tampilan Grafik 2: Net Income
         elif opsi_analisa == "Net Income Analysis (Laba Bersih)":
@@ -119,9 +114,9 @@ def halaman_varcost():
                 df_chart = df_chart.set_index(col_bulan)
                 st.bar_chart(df_chart)
             else:
-                st.warning(f"⚠️ Kolom '{col_bulan}' atau '{col_income}' tidak terdeteksi. Kolom yang ditemukan di sheet Anda: {list(df_raw.columns)}")
+                st.warning(f"⚠️ Kolom '{col_bulan}' atau '{col_income}' tidak terdeteksi. Kolom terdeteksi: {list(df_raw.columns)}")
 
-        # Menampilkan Ringkasan Metrik Terkini (Mengambil baris terbawah data)
+        # Menampilkan Ringkasan Metrik Angka Terkini (Baris Terbawah Data)
         st.write("")
         st.subheader("📈 Ringkasan Nilai Terkini")
         m1, m2 = st.columns(2)
@@ -133,7 +128,7 @@ def halaman_varcost():
             val_inc = df_raw[df_raw.columns[df_varcost.columns == col_income]].iloc[-1].values[0] if col_income in df_varcost.columns else "-"
             st.metric(label="Net Income Terakhir", value=str(val_inc))
 
-        # Menampilkan Tabel Utama Asli
+        # Menampilkan Tabel Utama Asli di Bagian Bawah
         st.write("")
         st.subheader("📋 Data Sheet Riil: VARCOST")
         st.dataframe(df_raw, use_container_width=True, hide_index=True)
@@ -162,7 +157,7 @@ def halaman_data_project():
     else:
         st.info("Tidak ada data untuk ditampilkan atau tab 'data Project' kosong.")
 
-# --- MENU 4: TAB DATA ASSET ---
+# --- MENU 4: TAB DATA ASSET (DENGAN FILTER SUB-MENU) ---
 def halaman_data_asset():
     st.title("🏢 Asset Management Inventory (data Asset)")
     st.caption("Manajemen aset perangkat core, transmisi, menara (tower), dan fasilitas penunjang.")
@@ -170,7 +165,9 @@ def halaman_data_asset():
     df_asset = ambil_data_sheet("data Asset")
 
     if not df_asset.empty:
-        sub_menu = st.radio("Pilih Kategori Kategori Asset:", ["Semua Asset", "Asset KUT", "Asset Rental"], horizontal=True)
+        sub_menu = st.radio("Pilih Kategori Asset:", ["Semua Asset", "Asset KUT", "Asset Rental"], horizontal=True)
+        
+        # 💡 SILAKAN SESUAIKAN: Ganti judul kolom di bawah ini jika nama kolom pemisah di sheet Anda bukan 'Jenis Asset'
         nama_kolom_pemisah = "Jenis Asset" 
 
         if nama_kolom_pemisah in df_asset.columns:
@@ -183,6 +180,7 @@ def halaman_data_asset():
                 df_rental = df_asset[df_asset[nama_kolom_pemisah].astype(str).str.contains("Rental", case=False, na=False)]
                 st.dataframe(df_rental, use_container_width=True, hide_index=True) if not df_rental.empty else st.info("Kategori Rental Kosong.")
         else:
+            st.warning(f"Kolom pemisah '{nama_kolom_pemisah}' tidak terdeteksi. Menampilkan seluruh data.")
             st.dataframe(df_asset, use_container_width=True, hide_index=True)
     else:
         st.info("Tidak ada data untuk ditampilkan atau tab 'data Asset' kosong.")
@@ -222,19 +220,3 @@ def halaman_monitoring_mbp():
 # ==========================================
 # 4. ROUTER EKSEKUSI HALAMAN
 # ==========================================
-if st.session_state.active_menu == "VARCOST":
-    halaman_varcost()
-elif st.session_state.active_menu == "DATA_PM":
-    halaman_data_pm()
-elif st.session_state.active_menu == "DATA_PROJECT":
-    halaman_data_project()
-elif st.session_state.active_menu == "DATA_ASSET":
-    halaman_data_asset()
-elif st.session_state.active_menu == "DATA_KPI":
-    halaman_data_kpi()
-elif st.session_state.active_menu == "DATA_OPERATIONAL":
-    halaman_data_operational()
-elif st.session_state.active_menu == "DATA_PJB":
-    halaman_data_pjb()
-elif st.session_state.active_menu == "MONITORING_MBP":
-    halaman_monitoring_mbp()
