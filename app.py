@@ -2,9 +2,10 @@ import streamlit as st
 
 st.set_page_config(page_title="Corporate Dashboard", layout="wide")
 
-# CSS untuk membuat tombol terlihat seperti kartu yang rapi
+# CSS untuk kartu yang bisa diklik seluruh areanya
 st.markdown("""
     <style>
+    /* Styling agar tombol Streamlit mengisi seluruh area div */
     div.stButton > button {
         width: 100% !important;
         height: 200px !important;
@@ -12,8 +13,6 @@ st.markdown("""
         border: 1px solid #444 !important;
         background-color: #262730 !important;
         color: white !important;
-        font-size: 18px !important;
-        font-weight: bold !important;
         display: flex !important;
         flex-direction: column !important;
         justify-content: center !important;
@@ -26,6 +25,7 @@ st.markdown("""
         background-color: #31333F !important;
     }
     .icon { font-size: 50px; margin-bottom: 10px; }
+    .label { font-size: 18px; font-weight: bold; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -51,9 +51,9 @@ if st.session_state.current_page == "Halaman Depan":
     cols = st.columns(3)
     for i, (icon, title, target) in enumerate(menus):
         with cols[i % 3]:
-            # Kita menggunakan label yang menggabungkan ikon dan teks
-            # Ini adalah cara paling kompatibel agar tombol bisa diklik
-            if st.button(f"<div class='icon'>{icon}</div>{title}", key=title):
+            # Tombol ini sekarang merender icon dan label di dalamnya
+            # Pengguna bisa mengklik di mana saja dalam area kotak ini
+            if st.button(f"<div class='icon'>{icon}</div><div class='label'>{title}</div>", key=title):
                 navigate_to(target)
 
 elif st.session_state.current_page == "Monitoring Asset":
